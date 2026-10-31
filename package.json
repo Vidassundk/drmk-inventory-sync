@@ -1,0 +1,14 @@
+{
+  "name": "deremika",
+  "private": true,
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "smoke:rrr": "pnpm --filter @deremika/rrr-client smoke"
+  }
+}
