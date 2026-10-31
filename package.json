@@ -9,6 +9,11 @@
     "dev:web": "pnpm --filter web dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "smoke:rrr": "pnpm --filter @deremika/rrr-client smoke"
+    "smoke:rrr": "pnpm --filter @deremika/rrr-client smoke",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
   }
 }

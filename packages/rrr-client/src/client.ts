@@ -37,6 +37,7 @@ export class RrrClient {
     if (params.dateTo) query.set("date_to", params.dateTo);
     if (params.search) query.set("search", params.search);
     if (params.externalIds?.length) query.set("external_ids", params.externalIds.join(","));
+    for (const [field, dir] of Object.entries(params.sort ?? {})) query.set(`sort[${field}]`, dir);
 
     const body = await this.post("v2/get/parts", query);
     return {
@@ -45,13 +46,27 @@ export class RrrClient {
     };
   }
 
-  /** Walks every page of /v2/get/parts. */
+  /** Walks every page of /v2/get/parts, by id ascending unless `sort` says otherwise. */
   async *iterateParts(params: Omit<GetPartsParams, "page"> = {}): AsyncGenerator<RrrPart> {
     const limit = params.limit ?? 100;
+    const sort = params.sort ?? { id: "asc" };
     for (let page = 1; ; page++) {
-      const { parts, pagination } = await this.getParts({ ...params, page, limit });
+      const { parts, pagination } = await this.getParts({ ...params, sort, page, limit });
       yield* parts;
       if (parts.length === 0 || page * limit >= pagination.total_count) return;
+    }
+  }
+
+  /**
+   * Parts with updated_at >= `since`, newest first. Paging newest-first means a
+   * part updated mid-walk moves to page 1 and pushes others down, which can
+   * repeat a part but never skip one, so callers should upsert idempotently.
+   * `since` uses the API's own "YYYY-MM-DD HH:mm:ss" format and timezone.
+   */
+  async *iteratePartsUpdatedSince(since: string, params: Pick<GetPartsParams, "limit"> = {}): AsyncGenerator<RrrPart> {
+    for await (const part of this.iterateParts({ ...params, sort: { updated_at: "desc" } })) {
+      if (part.updated_at < since) return;
+      yield part;
     }
   }
 
