@@ -1,0 +1,1 @@
+ALTER TYPE "public"."part_status" ADD VALUE 'unknown';

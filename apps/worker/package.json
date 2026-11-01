@@ -1,0 +1,20 @@
+{
+  "name": "worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync:full": "node --env-file-if-exists=../../.env src/cli.ts rrr:full",
+    "sync:incremental": "node --env-file-if-exists=../../.env src/cli.ts rrr:incremental",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@deremika/db": "workspace:*",
+    "@deremika/rrr-client": "workspace:*",
+    "drizzle-orm": "^0.45.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^5.9.3"
+  }
+}

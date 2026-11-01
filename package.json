@@ -11,7 +11,12 @@
     "typecheck": "pnpm -r typecheck",
     "smoke:rrr": "pnpm --filter @deremika/rrr-client smoke",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @deremika/db generate",
+    "db:migrate": "pnpm --filter @deremika/db migrate",
+    "db:studio": "pnpm --filter @deremika/db studio",
+    "sync:full": "pnpm --filter worker sync:full",
+    "sync:incremental": "pnpm --filter worker sync:incremental"
   },
   "devDependencies": {
     "prettier": "^3.9.10"
