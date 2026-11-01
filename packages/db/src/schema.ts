@@ -25,8 +25,19 @@ const updatedAt = () =>
     .defaultNow()
     .$onUpdate(() => new Date());
 
-// "unknown" covers RRR codes outside /get/part_status (e.g. 7); the raw code is kept in part_listings.raw.
-export const partStatus = pgEnum("part_status", ["in_stock", "reserved", "sold", "returned", "written_off", "unknown"]);
+// RRR codes 7 ("Dalių atsargų auditas", flagged in a stock count) and 8 ("Šablonas",
+// a listing template, not a physical part) are missing from /get/part_status.
+// "unknown" covers anything else new; the raw code stays in part_listings.raw.
+export const partStatus = pgEnum("part_status", [
+  "in_stock",
+  "reserved",
+  "sold",
+  "returned",
+  "written_off",
+  "unknown",
+  "stock_audit",
+  "template",
+]);
 export const imageStatus = pgEnum("image_status", ["pending", "stored", "failed"]);
 export const syncKind = pgEnum("sync_kind", ["full", "incremental"]);
 export const syncStatus = pgEnum("sync_status", ["running", "succeeded", "failed"]);

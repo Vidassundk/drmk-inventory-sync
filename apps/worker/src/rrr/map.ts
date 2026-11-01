@@ -10,6 +10,9 @@ const STATUS: Record<string, PartStatus> = {
   "2": "sold",
   "3": "returned",
   "4": "written_off",
+  // Not in /get/part_status; named from the RRR UI.
+  "7": "stock_audit",
+  "8": "template",
 };
 
 const blank = (v: string | null | undefined) => (v == null || v.trim() === "" ? null : v);
