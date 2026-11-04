@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
 import { partListings, parts, syncRuns, type Db } from "@deremika/db";
 import type { GetPartsParams, RrrClient, RrrPart } from "@deremika/rrr-client";
+import { exclusive } from "../lock.ts";
 import { externalUpdatedAt } from "./map.ts";
 import { upsertRrrPage, type PageStats } from "./upsert.ts";
 
@@ -37,22 +38,6 @@ async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 4): 
 const shiftNaive = (ts: string, ms: number) =>
   new Date(new Date(`${ts.replace(" ", "T")}Z`).getTime() + ms).toISOString().slice(0, 19).replace("T", " ");
 const maxTs = (a: string | null, b: string | null) => (!a ? b : !b ? a : a > b ? a : b);
-
-/** Runs `fn` under a session advisory lock so two syncs of the same kind never overlap. */
-async function exclusive<T>(client: Db["$client"], key: string, fn: () => Promise<T>): Promise<T> {
-  const conn = await client.reserve();
-  try {
-    const [{ locked }] = await conn`select pg_try_advisory_lock(hashtext(${key})) as locked`;
-    if (!locked) throw new Error(`Another "${key}" run is in progress`);
-    try {
-      return await fn();
-    } finally {
-      await conn`select pg_advisory_unlock(hashtext(${key}))`;
-    }
-  } finally {
-    conn.release();
-  }
-}
 
 async function tracked(
   db: Db,

@@ -6,12 +6,15 @@
   "scripts": {
     "sync:full": "node --env-file-if-exists=../../.env src/cli.ts rrr:full",
     "sync:incremental": "node --env-file-if-exists=../../.env src/cli.ts rrr:incremental",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "images:rehost": "node --env-file-if-exists=../../.env src/cli.ts images:rehost"
   },
   "dependencies": {
     "@deremika/db": "workspace:*",
     "@deremika/rrr-client": "workspace:*",
-    "drizzle-orm": "^0.45.4"
+    "aws4fetch": "^1.0.20",
+    "drizzle-orm": "^0.45.4",
+    "image-size": "^2.0.4"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

@@ -1,0 +1,35 @@
+# Copies pending part photos from Ovoko to R2, one small batch per hour.
+# Ovoko allows about 100 image requests per hour per IP, so each run takes 95 and exits.
+name: images-rehost
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: images-rehost
+  cancel-in-progress: false
+
+jobs:
+  rehost:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter worker...
+      - run: pnpm images:rehost 95
+        env:
+          REHOST_INTERVAL_MS: 1000
+          REHOST_MAX_PAUSE_MS: 60000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
