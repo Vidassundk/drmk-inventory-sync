@@ -4,6 +4,8 @@ A small Cloudflare Worker that starts the GitHub Actions workflows on time. It e
 
 The Worker has no public URL. It only runs on its cron triggers and calls GitHub's `workflow_dispatch` API.
 
+If GitHub answers with a 5xx or the network fails, it retries after 5 and then 15 seconds. A 4xx means the token or workflow is wrong, so it fails straight away.
+
 ## Changing a schedule
 
 Update both of these, then deploy:
