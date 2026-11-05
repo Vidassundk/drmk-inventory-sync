@@ -1,7 +1,7 @@
 // Our own inventory model. RRR is the first channel feeding it; parts get our
 // own ids so later channels (and writes back to RRR) don't need a migration.
 // Every table has RLS on with no policies: only server-side connections read it.
-import { sql } from "drizzle-orm";
+import { sql, type SQLWrapper } from "drizzle-orm";
 import {
   bigserial,
   index,
@@ -48,6 +48,10 @@ export const channels = pgTable("channels", {
   createdAt: createdAt(),
 }).enableRLS();
 
+/** The text parts search runs over. The expression must match parts_search_idx exactly, or the index isn't used. */
+export const partSearchText = (t: Record<"name" | "manufacturerCode" | "visibleCode" | "otherCode", SQLWrapper>) =>
+  sql`lower(${t.name} || ' ' || coalesce(${t.manufacturerCode}, '') || ' ' || coalesce(${t.visibleCode}, '') || ' ' || coalesce(${t.otherCode}, ''))`;
+
 export const parts = pgTable(
   "parts",
   {
@@ -74,8 +78,41 @@ export const parts = pgTable(
     index("parts_status_idx").on(t.status),
     index("parts_manufacturer_code_idx").on(t.manufacturerCode),
     index("parts_rrr_category_idx").on(t.rrrCategoryId),
+    // Back the newest-first list, so a page reads its rows in order instead of sorting the whole table.
+    index("parts_listed_idx")
+      .on(t.listedAt.desc(), t.id.desc())
+      .where(sql`${t.deletedAt} is null`),
+    index("parts_status_listed_idx")
+      .on(t.status, t.listedAt.desc(), t.id.desc())
+      .where(sql`${t.deletedAt} is null`),
+    index("parts_search_idx").using("gin", sql`${partSearchText(t)} extensions.gin_trgm_ops`),
   ],
 ).enableRLS();
+
+/** RRR's model catalog. Refreshed nightly; rrr_cars points at it by id. */
+export const rrrCarModels = pgTable("rrr_car_models", {
+  id: integer("id").primaryKey(),
+  brand: text("brand").notNull(),
+  name: text("name").notNull(),
+  yearStart: smallint("year_start"),
+  yearEnd: smallint("year_end"),
+  updatedAt: updatedAt(),
+}).enableRLS();
+
+/** Donor cars from RRR, with its codes already translated to Lithuanian names. Parts link by parts.rrr_car_id. */
+export const rrrCars = pgTable("rrr_cars", {
+  id: integer("id").primaryKey(),
+  modelId: integer("model_id"),
+  year: smallint("year"),
+  bodyType: text("body_type"),
+  fuel: text("fuel"),
+  powerKw: smallint("power_kw"),
+  engineCc: integer("engine_cc"),
+  color: text("color"),
+  wheelDrive: text("wheel_drive"),
+  raw: jsonb("raw").notNull(),
+  updatedAt: updatedAt(),
+}).enableRLS();
 
 /** One row per part per channel: how that channel knows the part, and its last raw payload. */
 export const partListings = pgTable(

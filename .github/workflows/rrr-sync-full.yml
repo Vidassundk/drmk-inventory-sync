@@ -29,3 +29,11 @@ jobs:
           RRR_PASSWORD: ${{ secrets.RRR_PASSWORD }}
           RRR_USER_TOKEN: ${{ secrets.RRR_USER_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # Its own step, so a car failure can't undo the parts sync above.
+      - run: pnpm sync:cars all
+        env:
+          RRR_BASE_URL: https://api.rrr.lt/
+          RRR_USERNAME: ${{ secrets.RRR_USERNAME }}
+          RRR_PASSWORD: ${{ secrets.RRR_PASSWORD }}
+          RRR_USER_TOKEN: ${{ secrets.RRR_USER_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

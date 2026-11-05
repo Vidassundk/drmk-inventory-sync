@@ -21,7 +21,7 @@ type Stats = Omit<PageStats, "unknownStatus"> & {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 4): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 4): Promise<T> {
   for (let i = 1; ; i++) {
     try {
       return await fn();

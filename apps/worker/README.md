@@ -2,11 +2,12 @@
 
 The jobs that keep the mirror up to date. They run on GitHub Actions and can also be run locally from the repo root.
 
-| Command                      | Job               | What it does                                        |
-| ---------------------------- | ----------------- | --------------------------------------------------- |
-| `pnpm sync:incremental`      | `rrr:incremental` | Reads parts changed since the last successful run   |
-| `pnpm sync:full`             | `rrr:full`        | Walks every part and marks missing ones as removed  |
-| `pnpm images:rehost [limit]` | `images:rehost`   | Copies pending photos to R2, up to `limit` if given |
+| Command                      | Job               | What it does                                            |
+| ---------------------------- | ----------------- | ------------------------------------------------------- |
+| `pnpm sync:incremental`      | `rrr:incremental` | Reads parts changed since the last successful run       |
+| `pnpm sync:full`             | `rrr:full`        | Walks every part and marks missing ones as removed      |
+| `pnpm sync:cars [all]`       | `rrr:cars`        | Refreshes donor cars and, with `all`, the model catalog |
+| `pnpm images:rehost [limit]` | `images:rehost`   | Copies pending photos to R2, up to `limit` if given     |
 
 Each job takes a Postgres advisory lock, so a second copy exits with an error instead of overlapping. The two sync jobs share one lock. Every sync is recorded in the `sync_runs` table.
 
@@ -15,6 +16,10 @@ Each job takes a Postgres advisory lock, so a second copy exits with an error in
 - **Incremental** sorts by `updated_at`, which RRR bumps on edits, price changes and sales. It re-reads the last 5 minutes on each run so that nothing on the boundary is lost.
 - **Full** is the only way to notice hard deletes, because RRR doesn't report them. It refuses to remove anything if it saw under 95% of the expected total.
 - `updated_at` is a plain Europe/Vilnius time with no timezone, so it's stored as a string. Around the autumn clock change the incremental can miss updates; the nightly full scan picks those up.
+
+### Cars
+
+Parts only carry a car ID, and RRR's cars only carry codes. `rrr:cars` translates them to Lithuanian names while syncing, so the dashboard doesn't need any code tables. It runs as a separate workflow step after each sync: the newest 100 cars after an incremental sync, and everything after the nightly full scan. An edit to an older car appears after the next nightly run.
 
 ### Photo URLs
 

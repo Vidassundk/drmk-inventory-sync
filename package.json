@@ -19,6 +19,7 @@
     "db:studio": "pnpm --filter @deremika/db studio",
     "sync:full": "pnpm --filter worker sync:full",
     "sync:incremental": "pnpm --filter worker sync:incremental",
+    "sync:cars": "pnpm --filter worker sync:cars",
     "images:rehost": "pnpm --filter worker images:rehost",
     "scheduler:deploy": "pnpm --filter scheduler run deploy"
   },

@@ -91,3 +91,25 @@ export type GetPartsResult = {
   parts: RrrPart[];
   pagination: RrrPagination;
 };
+
+/** One donor car. Most fields are codes for the lookup tables, and values are strings ("" when unset). */
+export type RrrCar = {
+  id: string;
+  car_model: string;
+  car_years: string;
+  car_body_type: string;
+  car_fuel: string;
+  car_engine_power: string;
+  car_engine_cubic_capacity: string;
+  car_color: string;
+  car_wheel_drive: string;
+  [field: string]: unknown;
+};
+
+export type RrrCarBrand = { id: string; name: string };
+export type RrrCarModel = { id: string; brand: string; name: string; year_start: string; year_end: string };
+
+/** Code tables that translate RRR's numeric codes into names. */
+export type RrrLookup = "fuel" | "color" | "wheel_drive" | "car_body_type";
+
+export type GetCarsResult = { cars: RrrCar[]; pagination: RrrPagination };

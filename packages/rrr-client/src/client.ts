@@ -1,4 +1,15 @@
-import type { GetPartsParams, GetPartsResult, RrrCredentials, RrrPagination, RrrPart } from "./types.ts";
+import type {
+  GetCarsResult,
+  GetPartsParams,
+  GetPartsResult,
+  RrrCar,
+  RrrCarBrand,
+  RrrCarModel,
+  RrrCredentials,
+  RrrLookup,
+  RrrPagination,
+  RrrPart,
+} from "./types.ts";
 
 export class RrrApiError extends Error {
   readonly httpStatus: number;
@@ -70,6 +81,50 @@ export class RrrClient {
     }
   }
 
+  /** POST /v2/get/cars — one page of the account's donor cars, newest first unless told otherwise. */
+  async getCars({
+    page = 1,
+    limit = 100,
+    sort = "desc",
+  }: { page?: number; limit?: number; sort?: "asc" | "desc" } = {}) {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit), "sort[id]": sort });
+    const body = await this.post("v2/get/cars", query);
+    return {
+      cars: (body.data as RrrCar[] | undefined) ?? [],
+      pagination: readPagination(body.pagination),
+    } satisfies GetCarsResult;
+  }
+
+  /** Walks every page of /v2/get/cars. */
+  async *iterateCars(): AsyncGenerator<RrrCar> {
+    for (let page = 1; ; page++) {
+      const { cars, pagination } = await this.getCars({ page });
+      yield* cars;
+      if (cars.length === 0 || page * pagination.limit >= pagination.total_count) return;
+    }
+  }
+
+  async getCarBrands() {
+    return readList<RrrCarBrand>(await this.post("get/car_brands", new URLSearchParams()));
+  }
+
+  async getCarModels(brandId: string) {
+    try {
+      return readList<RrrCarModel>(await this.post(`get/car_models/${brandId}`, new URLSearchParams()));
+    } catch (err) {
+      // RRR answers a brand with no models with an error, not an empty list.
+      if (err instanceof RrrApiError && err.message.includes("No car models found")) return [];
+      throw err;
+    }
+  }
+
+  /** A code table as code -> Lithuanian name. */
+  async getLookup(name: RrrLookup) {
+    const body = await this.post(`get/${name}`, new URLSearchParams());
+    const list = (body.list ?? {}) as Record<string, { lt?: string; en?: string }>;
+    return Object.fromEntries(Object.entries(list).map(([code, names]) => [code, names.lt ?? names.en ?? ""]));
+  }
+
   private async post(path: string, query: URLSearchParams): Promise<Record<string, unknown>> {
     const url = new URL(path, this.baseUrl);
     url.search = query.toString();
@@ -99,6 +154,11 @@ export class RrrClient {
     }
     return body;
   }
+}
+
+// Catalog endpoints answer with `list` and the v2 ones with `data`; some are keyed objects rather than arrays.
+function readList<T>(body: Record<string, unknown>): T[] {
+  return Object.values((body.list ?? body.data ?? {}) as Record<string, T>);
 }
 
 // The spec nests pagination twice ({pagination: {pagination: {...}}}) while its

@@ -6,6 +6,7 @@
   "scripts": {
     "sync:full": "node --env-file-if-exists=../../.env src/cli.ts rrr:full",
     "sync:incremental": "node --env-file-if-exists=../../.env src/cli.ts rrr:incremental",
+    "sync:cars": "node --env-file-if-exists=../../.env src/cli.ts rrr:cars",
     "typecheck": "tsc --noEmit",
     "images:rehost": "node --env-file-if-exists=../../.env src/cli.ts images:rehost"
   },

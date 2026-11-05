@@ -36,6 +36,20 @@
       "when": 1793513183398,
       "tag": "0004_part_status_audit_template",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793891837313,
+      "tag": "0005_parts_list_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793893999943,
+      "tag": "0006_rrr_cars",
+      "breakpoints": true
     }
   ]
 }

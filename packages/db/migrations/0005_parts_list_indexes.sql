@@ -1,0 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;--> statement-breakpoint
+CREATE INDEX "parts_listed_idx" ON "parts" USING btree ("listed_at" DESC NULLS LAST,"id" DESC NULLS LAST) WHERE "parts"."deleted_at" is null;--> statement-breakpoint
+CREATE INDEX "parts_status_listed_idx" ON "parts" USING btree ("status","listed_at" DESC NULLS LAST,"id" DESC NULLS LAST) WHERE "parts"."deleted_at" is null;--> statement-breakpoint
+CREATE INDEX "parts_search_idx" ON "parts" USING gin (lower("name" || ' ' || coalesce("manufacturer_code", '') || ' ' || coalesce("visible_code", '') || ' ' || coalesce("other_code", '')) extensions.gin_trgm_ops);
