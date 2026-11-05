@@ -2,12 +2,12 @@
 
 The jobs that keep the mirror up to date. They run on GitHub Actions and can also be run locally from the repo root.
 
-| Command                      | Job               | What it does                                            |
-| ---------------------------- | ----------------- | ------------------------------------------------------- |
-| `pnpm sync:incremental`      | `rrr:incremental` | Reads parts changed since the last successful run       |
-| `pnpm sync:full`             | `rrr:full`        | Walks every part and marks missing ones as removed      |
-| `pnpm sync:cars [all]`       | `rrr:cars`        | Refreshes donor cars and, with `all`, the model catalog |
-| `pnpm images:rehost [limit]` | `images:rehost`   | Copies pending photos to R2, up to `limit` if given     |
+| Command                      | Job               | What it does                                                          |
+| ---------------------------- | ----------------- | --------------------------------------------------------------------- |
+| `pnpm sync:incremental`      | `rrr:incremental` | Reads parts changed since the last successful run                     |
+| `pnpm sync:full`             | `rrr:full`        | Walks every part and marks missing ones as removed                    |
+| `pnpm sync:cars [all]`       | `rrr:cars`        | Refreshes donor cars and, with `all`, the model and category catalogs |
+| `pnpm images:rehost [limit]` | `images:rehost`   | Copies pending photos to R2, up to `limit` if given                   |
 
 Each job takes a Postgres advisory lock, so a second copy exits with an error instead of overlapping. The two sync jobs share one lock. Every sync is recorded in the `sync_runs` table.
 

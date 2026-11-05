@@ -5,6 +5,7 @@ import type {
   RrrCar,
   RrrCarBrand,
   RrrCarModel,
+  RrrCategory,
   RrrCredentials,
   RrrLookup,
   RrrPagination,
@@ -116,6 +117,10 @@ export class RrrClient {
       if (err instanceof RrrApiError && err.message.includes("No car models found")) return [];
       throw err;
     }
+  }
+
+  async getCategories() {
+    return readList<RrrCategory>(await this.post("get/categories", new URLSearchParams()));
   }
 
   /** A code table as code -> Lithuanian name. */

@@ -45,18 +45,18 @@ pnpm smoke:rrr
 
 ## Commands
 
-| Command                                         | What it does                                                                         |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `pnpm dev:web`                                  | Runs the dashboard locally                                                           |
-| `pnpm web:preview`                              | Builds the dashboard and runs it in the Cloudflare runtime locally                   |
-| `pnpm web:deploy`                               | Builds and deploys the dashboard to Cloudflare by hand                               |
-| `pnpm typecheck`                                | Typechecks every package                                                             |
-| `pnpm format` / `pnpm format:check`             | Formats or checks the repo with Prettier                                             |
-| `pnpm db:generate` / `db:migrate` / `db:studio` | Creates or applies migrations, opens Drizzle Studio                                  |
-| `pnpm sync:incremental` / `pnpm sync:full`      | Runs an RRR sync                                                                     |
-| `pnpm sync:cars [all]`                          | Refreshes donor cars: the newest page, or with `all` every car and the model catalog |
-| `pnpm images:rehost [limit]`                    | Copies pending photos to R2                                                          |
-| `pnpm scheduler:deploy`                         | Deploys the Cloudflare scheduler                                                     |
+| Command                                         | What it does                                                                                        |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `pnpm dev:web`                                  | Runs the dashboard locally                                                                          |
+| `pnpm web:preview`                              | Builds the dashboard and runs it in the Cloudflare runtime locally                                  |
+| `pnpm web:deploy`                               | Builds and deploys the dashboard to Cloudflare by hand                                              |
+| `pnpm typecheck`                                | Typechecks every package                                                                            |
+| `pnpm format` / `pnpm format:check`             | Formats or checks the repo with Prettier                                                            |
+| `pnpm db:generate` / `db:migrate` / `db:studio` | Creates or applies migrations, opens Drizzle Studio                                                 |
+| `pnpm sync:incremental` / `pnpm sync:full`      | Runs an RRR sync                                                                                    |
+| `pnpm sync:cars [all]`                          | Refreshes donor cars: the newest page, or with `all` every car plus the model and category catalogs |
+| `pnpm images:rehost [limit]`                    | Copies pending photos to R2                                                                         |
+| `pnpm scheduler:deploy`                         | Deploys the Cloudflare scheduler                                                                    |
 
 ## Scheduled jobs
 

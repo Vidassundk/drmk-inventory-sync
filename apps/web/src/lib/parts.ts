@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import {
   and,
@@ -13,12 +14,29 @@ import {
   partSearchText,
   rrrCarModels,
   rrrCars,
+  rrrCategories,
   sql,
 } from "@deremika/db";
 import { getDb } from "./db";
 import type { PartsQuery, PartTab } from "./parts-query";
 
 const MAX_SEARCH_TERMS = 5;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const carColumns = {
+  rrrCarId: parts.rrrCarId,
+  carBrand: rrrCarModels.brand,
+  carModel: rrrCarModels.name,
+  carYearStart: rrrCarModels.yearStart,
+  carYearEnd: rrrCarModels.yearEnd,
+  carYear: rrrCars.year,
+  carBodyType: rrrCars.bodyType,
+  carFuel: rrrCars.fuel,
+  carPowerKw: rrrCars.powerKw,
+  carEngineCc: rrrCars.engineCc,
+  carColor: rrrCars.color,
+  carWheelDrive: rrrCars.wheelDrive,
+};
 
 /** Our R2 copy if the photo has been rehosted, otherwise the original on Ovoko. */
 export function imageUrl(image: { storageKey: string | null; sourceUrl: string | null }) {
@@ -99,18 +117,9 @@ export async function listParts({ tab, q, page, pageSize }: PartsQuery) {
         price: parts.price,
         currency: parts.currency,
         status: parts.status,
-        rrrCarId: parts.rrrCarId,
-        carBrand: rrrCarModels.brand,
-        carModel: rrrCarModels.name,
-        carYearStart: rrrCarModels.yearStart,
-        carYearEnd: rrrCarModels.yearEnd,
-        carYear: rrrCars.year,
-        carBodyType: rrrCars.bodyType,
-        carFuel: rrrCars.fuel,
-        carPowerKw: rrrCars.powerKw,
-        carEngineCc: rrrCars.engineCc,
-        carColor: rrrCars.color,
-        carWheelDrive: rrrCars.wheelDrive,
+        quality: parts.quality,
+        category: rrrCategories.name,
+        ...carColumns,
         listedAt: parts.listedAt,
         storageKey: images.storageKey,
         sourceUrl: images.sourceUrl,
@@ -123,6 +132,7 @@ export async function listParts({ tab, q, page, pageSize }: PartsQuery) {
       .leftJoin(images, eq(images.id, partImages.imageId))
       .leftJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
       .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
+      .leftJoin(rrrCategories, eq(rrrCategories.id, parts.rrrCategoryId))
       .orderBy(...newestFirst),
     db.select({ total: count() }).from(parts).where(where),
   ]);
@@ -137,3 +147,49 @@ export async function listParts({ tab, q, page, pageSize }: PartsQuery) {
 }
 
 export type PartRow = Awaited<ReturnType<typeof listParts>>["rows"][number];
+
+/** One part with everything the detail page shows. Cached so metadata and the page share a single read. */
+export const getPart = cache(async (id: string) => {
+  if (!UUID.test(id)) return null;
+  const db = getDb();
+
+  const [[part], photos] = await Promise.all([
+    db
+      .select({
+        id: parts.id,
+        rrrId: partListings.externalId,
+        // Read for this one part only; the list never touches the raw payload.
+        rrrUrl: sql<string | null>`${partListings.raw}->>'shop_url'`,
+        name: parts.name,
+        manufacturerCode: parts.manufacturerCode,
+        visibleCode: parts.visibleCode,
+        otherCode: parts.otherCode,
+        notes: parts.notes,
+        internalNotes: parts.internalNotes,
+        price: parts.price,
+        currency: parts.currency,
+        quality: parts.quality,
+        status: parts.status,
+        listedAt: parts.listedAt,
+        deletedAt: parts.deletedAt,
+        categoryPath: rrrCategories.path,
+        ...carColumns,
+      })
+      .from(parts)
+      .leftJoin(partListings, and(eq(partListings.partId, parts.id), eq(partListings.channelId, "rrr")))
+      .leftJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
+      .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
+      .leftJoin(rrrCategories, eq(rrrCategories.id, parts.rrrCategoryId))
+      .where(eq(parts.id, id))
+      .limit(1),
+    db
+      .select({ storageKey: images.storageKey, sourceUrl: images.sourceUrl })
+      .from(partImages)
+      .innerJoin(images, eq(images.id, partImages.imageId))
+      .where(eq(partImages.partId, id))
+      .orderBy(partImages.position),
+  ]);
+
+  if (!part) return null;
+  return { ...part, photoUrls: photos.map(imageUrl).filter((url) => url !== null) };
+});

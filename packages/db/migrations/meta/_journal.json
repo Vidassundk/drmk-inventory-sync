@@ -50,6 +50,13 @@
       "when": 1793893999943,
       "tag": "0006_rrr_cars",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793897193857,
+      "tag": "0007_rrr_categories",
+      "breakpoints": true
     }
   ]
 }

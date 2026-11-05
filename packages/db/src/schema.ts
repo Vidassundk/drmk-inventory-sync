@@ -114,6 +114,15 @@ export const rrrCars = pgTable("rrr_cars", {
   updatedAt: updatedAt(),
 }).enableRLS();
 
+/** RRR's part category tree in Lithuanian. `path` is the full trail, ready to display. Parts link by parts.rrr_category_id. */
+export const rrrCategories = pgTable("rrr_categories", {
+  id: integer("id").primaryKey(),
+  parentId: integer("parent_id"),
+  name: text("name").notNull(),
+  path: text("path").notNull(),
+  updatedAt: updatedAt(),
+}).enableRLS();
+
 /** One row per part per channel: how that channel knows the part, and its last raw payload. */
 export const partListings = pgTable(
   "part_listings",

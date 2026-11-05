@@ -21,6 +21,7 @@ await client.end();
 | `part_images`    | Which images belong to which part, in order                              |
 | `rrr_cars`       | Donor cars with their codes translated to Lithuanian names               |
 | `rrr_car_models` | RRR's brand and model catalog                                            |
+| `rrr_categories` | RRR's category tree in Lithuanian, with each category's full path        |
 | `sync_runs`      | History of sync jobs, with their stats and cursor                        |
 
 Removed parts are kept, with `deleted_at` set. `parts` and `part_listings` are separate so that one part can later be listed on several marketplaces.

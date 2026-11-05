@@ -1,10 +1,11 @@
 import { sql } from "drizzle-orm";
-import { rrrCarModels, rrrCars, type Db } from "@deremika/db";
-import type { RrrCar, RrrClient, RrrLookup } from "@deremika/rrr-client";
+import { rrrCarModels, rrrCars, rrrCategories, type Db } from "@deremika/db";
+import type { RrrCar, RrrCategory, RrrClient, RrrLookup } from "@deremika/rrr-client";
 import { exclusive } from "../lock.ts";
 import { withRetry } from "./sync.ts";
 
 const BATCH_SIZE = 100;
+const CATEGORY_BATCH_SIZE = 500;
 
 const int = (v: string | null | undefined) => {
   const n = Number.parseInt(v ?? "", 10);
@@ -49,6 +50,40 @@ async function syncModels(db: Db, rrr: RrrClient) {
   return count;
 }
 
+async function syncCategories(db: Db, rrr: RrrClient) {
+  const categories = await withRetry(() => rrr.getCategories(), "categories");
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  const nameOf = (c: RrrCategory) => c.lt ?? c.en ?? "";
+
+  const pathOf = (c: RrrCategory) => {
+    const names = [nameOf(c)];
+    for (let parent = byId.get(c.parent_id); parent; parent = byId.get(parent.parent_id)) names.unshift(nameOf(parent));
+    return names.join(" › ");
+  };
+
+  const rows = categories.map((c) => ({
+    id: Number(c.id),
+    parentId: int(c.parent_id),
+    name: nameOf(c),
+    path: pathOf(c),
+  }));
+  for (let i = 0; i < rows.length; i += CATEGORY_BATCH_SIZE) {
+    await db
+      .insert(rrrCategories)
+      .values(rows.slice(i, i + CATEGORY_BATCH_SIZE))
+      .onConflictDoUpdate({
+        target: rrrCategories.id,
+        set: {
+          parentId: sql`excluded.parent_id`,
+          name: sql`excluded.name`,
+          path: sql`excluded.path`,
+          updatedAt: new Date(),
+        },
+      });
+  }
+  return rows.length;
+}
+
 async function upsertCars(db: Db, cars: RrrCar[], labels: Record<RrrLookup, Record<string, string>>) {
   if (cars.length === 0) return;
   await db
@@ -86,12 +121,13 @@ async function upsertCars(db: Db, cars: RrrCar[], labels: Record<RrrLookup, Reco
 
 /**
  * Refreshes donor cars. By default only the newest page, which is cheap enough to run after every
- * incremental sync. `all` also rebuilds the model catalog and re-reads every car, picking up edits.
+ * incremental sync. `all` also rebuilds the model and category catalogs and re-reads every car, picking up edits.
  */
 export function syncRrrCars(db: Db, rrr: RrrClient, { all = false } = {}) {
   return exclusive(db.$client, "sync:rrr:cars", async () => {
     const started = Date.now();
     const models = all ? await syncModels(db, rrr) : 0;
+    const categories = all ? await syncCategories(db, rrr) : 0;
 
     const [fuel, color, wheel_drive, car_body_type] = await Promise.all(
       (["fuel", "color", "wheel_drive", "car_body_type"] as const).map((name) =>
@@ -119,7 +155,7 @@ export function syncRrrCars(db: Db, rrr: RrrClient, { all = false } = {}) {
       cars = newest.length;
     }
 
-    const stats = { models, cars };
+    const stats = { models, categories, cars };
     console.log(`rrr:cars done in ${Math.round((Date.now() - started) / 1000)}s`, stats);
     return stats;
   });
