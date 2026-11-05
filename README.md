@@ -20,13 +20,13 @@ GitHub Actions ── runs ──▶ apps/worker
 
 ## Layout
 
-| Path                                                   | What it is                                     |
-| ------------------------------------------------------ | ---------------------------------------------- |
-| `apps/web`                                             | Next.js dashboard                              |
-| [`apps/worker`](apps/worker/README.md)                 | Sync and image jobs                            |
-| [`apps/scheduler`](apps/scheduler/README.md)           | Cloudflare Worker that starts the jobs on time |
-| [`packages/db`](packages/db/README.md)                 | Drizzle schema, migrations and database client |
-| [`packages/rrr-client`](packages/rrr-client/README.md) | Typed client for the RRR API                   |
+| Path                                                   | What it is                                      |
+| ------------------------------------------------------ | ----------------------------------------------- |
+| `apps/web`                                             | Next.js dashboard, hosted on Cloudflare Workers |
+| [`apps/worker`](apps/worker/README.md)                 | Sync and image jobs                             |
+| [`apps/scheduler`](apps/scheduler/README.md)           | Cloudflare Worker that starts the jobs on time  |
+| [`packages/db`](packages/db/README.md)                 | Drizzle schema, migrations and database client  |
+| [`packages/rrr-client`](packages/rrr-client/README.md) | Typed client for the RRR API                    |
 
 ## Getting started
 
@@ -45,15 +45,17 @@ pnpm smoke:rrr
 
 ## Commands
 
-| Command                                         | What it does                                        |
-| ----------------------------------------------- | --------------------------------------------------- |
-| `pnpm dev:web`                                  | Runs the dashboard locally                          |
-| `pnpm typecheck`                                | Typechecks every package                            |
-| `pnpm format` / `pnpm format:check`             | Formats or checks the repo with Prettier            |
-| `pnpm db:generate` / `db:migrate` / `db:studio` | Creates or applies migrations, opens Drizzle Studio |
-| `pnpm sync:incremental` / `pnpm sync:full`      | Runs an RRR sync                                    |
-| `pnpm images:rehost [limit]`                    | Copies pending photos to R2                         |
-| `pnpm scheduler:deploy`                         | Deploys the Cloudflare scheduler                    |
+| Command                                         | What it does                                                       |
+| ----------------------------------------------- | ------------------------------------------------------------------ |
+| `pnpm dev:web`                                  | Runs the dashboard locally                                         |
+| `pnpm web:preview`                              | Builds the dashboard and runs it in the Cloudflare runtime locally |
+| `pnpm web:deploy`                               | Builds and deploys the dashboard to Cloudflare by hand             |
+| `pnpm typecheck`                                | Typechecks every package                                           |
+| `pnpm format` / `pnpm format:check`             | Formats or checks the repo with Prettier                           |
+| `pnpm db:generate` / `db:migrate` / `db:studio` | Creates or applies migrations, opens Drizzle Studio                |
+| `pnpm sync:incremental` / `pnpm sync:full`      | Runs an RRR sync                                                   |
+| `pnpm images:rehost [limit]`                    | Copies pending photos to R2                                        |
+| `pnpm scheduler:deploy`                         | Deploys the Cloudflare scheduler                                   |
 
 ## Scheduled jobs
 

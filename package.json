@@ -7,6 +7,8 @@
   },
   "scripts": {
     "dev:web": "pnpm --filter web dev",
+    "web:preview": "pnpm --filter web preview",
+    "web:deploy": "pnpm --filter web run deploy",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "smoke:rrr": "pnpm --filter @deremika/rrr-client smoke",
