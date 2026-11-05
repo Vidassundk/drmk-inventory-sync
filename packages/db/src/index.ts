@@ -3,6 +3,8 @@ import postgres from "postgres";
 import * as schema from "./schema.ts";
 
 export * from "./schema.ts";
+// Re-exported so every app uses this copy of drizzle-orm; a second copy breaks its types.
+export { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 export { schema };
 
 export type Db = ReturnType<typeof createDb>["db"];
