@@ -63,7 +63,7 @@ All three are started by `apps/scheduler`. Times are UTC.
 | ---------------------- | ---------------- | ------------------------------------------------------ |
 | `rrr-sync-incremental` | Every 15 minutes | Pulls parts changed on RRR and queues their new photos |
 | `rrr-sync-full`        | Nightly at 02:41 | Walks every part, catching deletes and anything missed |
-| `images-rehost`        | Hourly at :17    | Copies 95 photos, in-stock parts first                 |
+| `images-rehost`        | Hourly at :17    | Copies 95 photos, in-stock covers first                |
 
 Any of them can also be started by hand from the repo's Actions tab.
 

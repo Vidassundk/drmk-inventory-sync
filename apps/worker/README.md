@@ -22,7 +22,14 @@ Ovoko URLs contain a random corner segment (`/tl/`, `/tr/`, `/bl/`, `/br/`) that
 
 ## Image rehosting
 
-Photos are stored in R2 under the hash of their content (`parts/<sha[0:2]>/<sha256>.<ext>`), so identical files share one object. New images start as `pending` and go to `stored`, or to `failed` after 5 attempts. Images of in-stock parts go first.
+Photos are stored in R2 under the hash of their content (`parts/<sha[0:2]>/<sha256>.<ext>`), so identical files share one object. New images start as `pending` and go to `stored`, or to `failed` after 5 attempts. Copy order:
+
+1. In-stock cover photos (the first photo of each part)
+2. Other in-stock photos
+3. Cover photos of parts not in stock
+4. Everything else
+
+Covers go first because list pages show them. Viewers' browsers load any uncopied photo from Ovoko, which should count against the same hourly limit.
 
 **Ovoko allows about 100 image requests per hour per IP, however they are spaced.** Going over gets an HTTP 429 with an hour-long `Retry-After`, and any further request restarts that hour. The block also covers everyone else on the same connection. So:
 

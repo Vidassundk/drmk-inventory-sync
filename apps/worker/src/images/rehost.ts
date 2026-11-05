@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { imageSize } from "image-size";
 import { images, partImages, parts, type Db } from "@deremika/db";
 import { exclusive } from "../lock.ts";
@@ -151,10 +151,17 @@ async function rehost(db: Db, r2: R2, limit: number) {
   let attempted = 0;
   let stopped = false;
 
-  // Images of parts still for sale go first; sold parts' photos matter least.
-  const inStock = sql<boolean>`exists (
-    select 1 from ${partImages} join ${parts} on ${parts.id} = ${partImages.partId}
-    where ${partImages.imageId} = ${images.id} and ${parts.status} = 'in_stock' and ${parts.deletedAt} is null
+  // Lowest first: in-stock covers, other in-stock photos, covers of parts not in stock, everything else.
+  // Covers come first because list pages show them, and each Ovoko fallback uses up the viewer's hourly limit.
+  const priority = sql<number>`(
+    select min(case
+      when ${parts.status} = 'in_stock' and ${partImages.position} = 0 then 0
+      when ${parts.status} = 'in_stock' then 1
+      when ${partImages.position} = 0 then 2
+      else 3
+    end)
+    from ${partImages} join ${parts} on ${parts.id} = ${partImages.partId}
+    where ${partImages.imageId} = ${images.id} and ${parts.deletedAt} is null
   )`;
 
   while (attempted < limit && !stopped) {
@@ -163,7 +170,7 @@ async function rehost(db: Db, r2: R2, limit: number) {
       .select({ id: images.id, sourceUrl: images.sourceUrl, attempts: images.attempts })
       .from(images)
       .where(and(eq(images.status, "pending"), sql`${images.attempts} < ${MAX_ATTEMPTS}`))
-      .orderBy(asc(images.attempts), desc(inStock), asc(images.createdAt))
+      .orderBy(asc(images.attempts), asc(priority), asc(images.createdAt))
       .limit(Math.min(BATCH_SIZE, limit - attempted));
     if (batch.length === 0) break;
 
