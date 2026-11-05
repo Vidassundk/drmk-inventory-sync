@@ -1,0 +1,32 @@
+# Walks every part on RRR nightly. Catches hard deletes and anything the incremental sync missed.
+name: rrr-sync-full
+
+on:
+  schedule:
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+
+# Shared with rrr-sync-incremental: both take the same lock, so they queue instead of failing.
+concurrency:
+  group: rrr-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter worker...
+      - run: pnpm sync:full
+        env:
+          RRR_BASE_URL: https://api.rrr.lt/
+          RRR_USERNAME: ${{ secrets.RRR_USERNAME }}
+          RRR_PASSWORD: ${{ secrets.RRR_PASSWORD }}
+          RRR_USER_TOKEN: ${{ secrets.RRR_USER_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
