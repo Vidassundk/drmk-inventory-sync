@@ -17,7 +17,8 @@
     "db:studio": "pnpm --filter @deremika/db studio",
     "sync:full": "pnpm --filter worker sync:full",
     "sync:incremental": "pnpm --filter worker sync:incremental",
-    "images:rehost": "pnpm --filter worker images:rehost"
+    "images:rehost": "pnpm --filter worker images:rehost",
+    "scheduler:deploy": "pnpm --filter scheduler run deploy"
   },
   "devDependencies": {
     "prettier": "^3.9.10"

@@ -1,9 +1,8 @@
 # Pulls parts changed on RRR since the last run into the mirror, and queues their new photos.
 name: rrr-sync-incremental
 
+# Started on schedule by apps/scheduler, because GitHub's own `schedule:` drops most runs.
 on:
-  schedule:
-    - cron: "4,19,34,49 * * * *"
   workflow_dispatch:
 
 # Shared with rrr-sync-full: both take the same lock, so they queue instead of failing.

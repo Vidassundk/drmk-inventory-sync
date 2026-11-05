@@ -1,9 +1,8 @@
 # Walks every part on RRR nightly. Catches hard deletes and anything the incremental sync missed.
 name: rrr-sync-full
 
+# Started on schedule by apps/scheduler, because GitHub's own `schedule:` drops most runs.
 on:
-  schedule:
-    - cron: "41 2 * * *"
   workflow_dispatch:
 
 # Shared with rrr-sync-incremental: both take the same lock, so they queue instead of failing.

@@ -2,9 +2,8 @@
 # Ovoko allows about 100 image requests per hour per IP, so each run takes 95 and exits.
 name: images-rehost
 
+# Started on schedule by apps/scheduler, because GitHub's own `schedule:` drops most runs.
 on:
-  schedule:
-    - cron: "17 * * * *"
   workflow_dispatch:
 
 concurrency:
