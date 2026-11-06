@@ -79,7 +79,7 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
           <Field label={t("columns.listedAt")}>{part.listedAt?.slice(0, 10)}</Field>
           <Field label="RRR">
             {part.rrrUrl && (
-              <a href={part.rrrUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+              <a href={part.rrrUrl} target="_blank" rel="noreferrer" className="text-accent-text hover:underline">
                 {t("part.viewListing")}
               </a>
             )}

@@ -3,6 +3,7 @@
   "theme.toggle": "Switch between light and dark theme",
   "theme.title": "Switch theme",
   "language.label": "Language",
+  "language.changing": "Changing language",
   "parts.title": "Parts",
   "parts.searchPlaceholder": "Search by name, code, car or ID",
   "parts.searchLabel": "Search parts",

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "@/components/app-link";
 import { PartCover } from "@/components/part-cover";
 import { getI18n } from "@/lib/i18n-server";
 import { formatPrice, statusLabel } from "@/lib/part-format";
@@ -20,12 +20,12 @@ export async function SimilarParts({ part }: Props) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-semibold">{t("similar.title", { items: count("items", total) })}</h2>
         {total > SHOWN && (
-          <Link
+          <AppLink
             href={similarPartsHref(part.categoryId, part.carModelId)}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-accent-text hover:underline"
           >
             {t("similar.showAll")}
-          </Link>
+          </AppLink>
         )}
       </div>
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -33,9 +33,9 @@ export async function SimilarParts({ part }: Props) {
           <li key={similar.id} className="flex gap-3 text-sm">
             <PartCover src={similar.coverUrl} alt={similar.name} photoCount={similar.photoCount} />
             <div className="min-w-0">
-              <Link href={`/parts/${similar.id}`} className="font-medium hover:underline">
+              <AppLink href={`/parts/${similar.id}`} className="font-medium hover:underline">
                 {similar.name}
-              </Link>
+              </AppLink>
               <div className="text-xs text-zinc-500 tabular-nums">
                 {[similar.rrrId, similar.carYear, statusLabel(i18n, similar.status)].filter(Boolean).join(" · ")}
               </div>

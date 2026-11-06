@@ -38,7 +38,7 @@ export function PartsSearch({ query }: { query: PartsQuery }) {
       placeholder={t("parts.searchPlaceholder")}
       aria-label={t("parts.searchLabel")}
       aria-busy={pending}
-      className="h-9 w-full min-w-0 flex-1 rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-blue-600 aria-busy:opacity-60 dark:border-zinc-700"
+      className="h-9 w-full min-w-0 flex-1 rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-accent aria-busy:opacity-60 dark:border-zinc-700"
     />
   );
 }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "@/components/app-link";
 import { getI18n } from "@/lib/i18n-server";
 
 export default async function PartNotFound() {
@@ -7,9 +7,9 @@ export default async function PartNotFound() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
       <p>{t("part.notFound")}</p>
-      <Link href="/parts" className="text-sm text-blue-600 hover:underline">
+      <AppLink href="/parts" className="text-sm text-accent-text hover:underline">
         {t("part.backToList")}
-      </Link>
+      </AppLink>
     </main>
   );
 }

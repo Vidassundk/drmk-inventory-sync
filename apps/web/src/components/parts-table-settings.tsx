@@ -168,7 +168,7 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t("settings.search")}
             aria-label={t("settings.searchLabel")}
-            className="h-9 rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-blue-600 dark:border-zinc-700"
+            className="h-9 rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-accent dark:border-zinc-700"
           />
           <DndContext id="parts-columns" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={shown} strategy={verticalListSortingStrategy}>

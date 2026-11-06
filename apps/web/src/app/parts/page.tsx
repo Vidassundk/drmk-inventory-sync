@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import Link from "next/link";
+import { AppLink } from "@/components/app-link";
 import { PartsPagination } from "@/components/parts-pagination";
 import { PartsSearch } from "@/components/parts-search";
 import { PartsTable } from "@/components/parts-table";
@@ -25,12 +25,12 @@ async function PartsResults({ query, columns }: { query: PartsQuery; columns: Pa
       {filterLabel && (
         <p className="flex flex-wrap items-center gap-2 text-sm">
           <span className="rounded bg-zinc-100 px-2 py-1 dark:bg-zinc-900">{filterLabel}</span>
-          <Link
+          <AppLink
             href={partsHref(query, { category: null, model: null, page: 1 })}
             className="text-zinc-500 hover:text-foreground"
           >
             {t("parts.clearFilter")}
-          </Link>
+          </AppLink>
         </p>
       )}
       <PartsTable rows={rows} columns={columns} />

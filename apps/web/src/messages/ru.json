@@ -3,6 +3,7 @@
   "theme.toggle": "Переключить светлую или тёмную тему",
   "theme.title": "Сменить тему",
   "language.label": "Язык",
+  "language.changing": "Смена языка",
   "parts.title": "Запчасти",
   "parts.searchPlaceholder": "Поиск по названию, коду, автомобилю или ID",
   "parts.searchLabel": "Поиск запчастей",

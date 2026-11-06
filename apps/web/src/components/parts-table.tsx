@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { AppLink } from "@/components/app-link";
 import { CodePill } from "@/components/code-pill";
 import { PartCover } from "@/components/part-cover";
 import type { I18n } from "@/lib/i18n";
@@ -35,9 +35,9 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow, i18n
     cell: "min-w-48 max-w-64",
     render: (part) => (
       <>
-        <Link href={`/parts/${part.id}`} className="font-medium hover:underline">
+        <AppLink href={`/parts/${part.id}`} className="font-medium hover:underline">
           {part.name}
-        </Link>
+        </AppLink>
         {part.category && part.category !== part.name && <div className="text-xs text-zinc-500">{part.category}</div>}
       </>
     ),
@@ -64,9 +64,9 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow, i18n
     render: ({ stock, categoryId, carModelId, currency }, i18n) =>
       stock && categoryId && carModelId ? (
         <>
-          <Link href={similarPartsHref(categoryId, carModelId)} className="text-blue-600 hover:underline">
+          <AppLink href={similarPartsHref(categoryId, carModelId)} className="text-accent-text hover:underline">
             {i18n.count("items", stock.count)}
-          </Link>
+          </AppLink>
           <div className="text-xs text-zinc-500">{formatPrice(i18n, { price: stock.averagePrice, currency })}</div>
         </>
       ) : (

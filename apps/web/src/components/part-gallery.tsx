@@ -28,7 +28,7 @@ export function PartGallery({ urls, alt }: { urls: string[]; alt: string }) {
                 onClick={() => setSelected(index)}
                 aria-label={t("gallery.photo", { number: index + 1 })}
                 aria-current={index === selected}
-                className="block h-16 w-20 overflow-hidden rounded bg-zinc-100 ring-blue-600 aria-[current=true]:ring-2 dark:bg-zinc-900"
+                className="block h-16 w-20 overflow-hidden rounded bg-zinc-100 ring-accent aria-[current=true]:ring-2 dark:bg-zinc-900"
               >
                 {!failed.has(url) && (
                   // eslint-disable-next-line @next/next/no-img-element

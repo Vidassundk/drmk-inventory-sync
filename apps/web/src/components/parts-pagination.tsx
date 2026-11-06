@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "@/components/app-link";
 import { getI18n } from "@/lib/i18n-server";
 import { PAGE_SIZES, partsHref, type PartsQuery } from "@/lib/parts-query";
 
@@ -16,9 +16,9 @@ function PageLink({
   const className = "rounded border border-zinc-300 px-2.5 py-1 dark:border-zinc-700";
   if (disabled) return <span className={`${className} opacity-40`}>{label}</span>;
   return (
-    <Link href={partsHref(query, { page })} className={`${className} hover:bg-zinc-100 dark:hover:bg-zinc-900`}>
+    <AppLink href={partsHref(query, { page })} className={`${className} hover:bg-zinc-100 dark:hover:bg-zinc-900`}>
       {label}
-    </Link>
+    </AppLink>
   );
 }
 
@@ -35,14 +35,14 @@ export async function PartsPagination({ query, total }: { query: PartsQuery; tot
       <div className="flex items-center gap-2">
         <span>{t("pagination.rowsPerPage")}</span>
         {PAGE_SIZES.map((size) => (
-          <Link
+          <AppLink
             key={size}
             href={partsHref(query, { pageSize: size, page: 1 })}
             aria-current={size === pageSize ? "true" : undefined}
             className="rounded px-1.5 py-0.5 aria-[current=true]:bg-zinc-100 aria-[current=true]:font-medium aria-[current=true]:text-foreground dark:aria-[current=true]:bg-zinc-900"
           >
             {size}
-          </Link>
+          </AppLink>
         ))}
       </div>
       <div className="flex items-center gap-2 tabular-nums">
