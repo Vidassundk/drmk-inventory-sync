@@ -168,7 +168,7 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
             aria-label="Ieškoti stulpelių"
             className="h-9 rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-blue-600 dark:border-zinc-700"
           />
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <DndContext id="parts-columns" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={shown} strategy={verticalListSortingStrategy}>
               <ul className="flex-1 overflow-y-auto">
                 {shown.map((key) => (
