@@ -19,9 +19,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useI18n } from "@/components/i18n-provider";
 import {
   COLUMNS_COOKIE,
-  columnOf,
   DEFAULT_COLUMN_SETTINGS,
   isLocked,
   type ColumnSettings,
@@ -42,7 +42,8 @@ function ColumnRow({ columnKey, checked, sortable, onToggle }: RowProps) {
     id: columnKey,
     disabled: !sortable,
   });
-  const { label } = columnOf(columnKey);
+  const { t } = useI18n();
+  const label = t(`columns.${columnKey}`);
 
   return (
     <li
@@ -54,7 +55,7 @@ function ColumnRow({ columnKey, checked, sortable, onToggle }: RowProps) {
         type="button"
         {...attributes}
         {...listeners}
-        aria-label={`Perkelti stulpelį ${label}`}
+        aria-label={t("settings.move", { column: label })}
         className="cursor-grab touch-none px-1 text-zinc-400 hover:text-foreground disabled:invisible"
         disabled={!sortable}
       >
@@ -70,6 +71,7 @@ function ColumnRow({ columnKey, checked, sortable, onToggle }: RowProps) {
 
 export function PartsTableSettings({ settings: initial }: { settings: ColumnSettings }) {
   const router = useRouter();
+  const { t } = useI18n();
   const dialog = useRef<HTMLDialogElement>(null);
   const [settings, setSettings] = useState(initial);
   const [search, setSearch] = useState("");
@@ -103,15 +105,15 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
   const showingAll = settings.hidden.length === 0;
   const hidingAll = settings.order.every((key) => isLocked(key) || settings.hidden.includes(key));
   const term = search.trim().toLowerCase();
-  const shown = settings.order.filter((key) => columnOf(key).label.toLowerCase().includes(term));
+  const shown = settings.order.filter((key) => t(`columns.${key}`).toLowerCase().includes(term));
 
   return (
     <>
       <button
         type="button"
         onClick={() => dialog.current?.showModal()}
-        aria-label="Lentelės nustatymai"
-        title="Lentelės nustatymai"
+        aria-label={t("settings.title")}
+        title={t("settings.title")}
         className="grid size-9 shrink-0 place-items-center rounded-md border border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
       >
         <svg
@@ -128,17 +130,17 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
       </button>
       <dialog
         ref={dialog}
-        aria-label="Lentelės nustatymai"
+        aria-label={t("settings.title")}
         onClick={(event) => event.target === dialog.current && dialog.current.close()}
         className="m-0 ml-auto h-dvh max-h-none w-80 max-w-full bg-background text-foreground backdrop:bg-black/40"
       >
         <div className="flex h-full flex-col gap-3 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Lentelės nustatymai</h2>
+            <h2 className="font-semibold">{t("settings.title")}</h2>
             <button
               type="button"
               onClick={() => dialog.current?.close()}
-              aria-label="Uždaryti"
+              aria-label={t("settings.close")}
               className="px-1 text-lg"
             >
               ✕
@@ -158,14 +160,14 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
                 })
               }
             />
-            Rodyti visus stulpelius
+            {t("settings.showAll")}
           </label>
           <input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Ieškoti"
-            aria-label="Ieškoti stulpelių"
+            placeholder={t("settings.search")}
+            aria-label={t("settings.searchLabel")}
             className="h-9 rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-blue-600 dark:border-zinc-700"
           />
           <DndContext id="parts-columns" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -188,7 +190,7 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
             onClick={() => save(DEFAULT_COLUMN_SETTINGS)}
             className="self-start text-sm text-zinc-500 hover:text-foreground"
           >
-            Atstatyti numatytuosius
+            {t("settings.reset")}
           </button>
         </div>
       </dialog>

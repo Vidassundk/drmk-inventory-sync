@@ -1,17 +1,11 @@
 // The list's state lives in the URL, so links, refresh and the back button all work.
 // No database imports here: client components use this file too.
 
-export const PART_TABS = {
-  stock: "Sandėlyje",
-  reserved: "Rezervuota",
-  sold: "Parduota",
-  noPrice: "Be kainos",
-  all: "Visi",
-} as const;
+export const PART_TABS = ["stock", "reserved", "sold", "noPrice", "all"] as const;
 
 export const PAGE_SIZES = [30, 50, 100] as const;
 
-export type PartTab = keyof typeof PART_TABS;
+export type PartTab = (typeof PART_TABS)[number];
 export type PartsQuery = {
   tab: PartTab;
   q: string;
@@ -39,7 +33,7 @@ export function parsePartsQuery(params: RawParams): PartsQuery {
   const page = Number(first(params.page));
   const pageSize = Number(first(params.pageSize));
   return {
-    tab: tab && tab in PART_TABS ? (tab as PartTab) : DEFAULTS.tab,
+    tab: PART_TABS.find((known) => known === tab) ?? DEFAULTS.tab,
     q: first(params.q)?.trim().slice(0, 100) ?? DEFAULTS.q,
     page: Number.isInteger(page) && page > 0 ? page : DEFAULTS.page,
     pageSize: PAGE_SIZES.find((size) => size === pageSize) ?? DEFAULTS.pageSize,

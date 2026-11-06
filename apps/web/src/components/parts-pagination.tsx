@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getI18n } from "@/lib/i18n-server";
 import { PAGE_SIZES, partsHref, type PartsQuery } from "@/lib/parts-query";
 
 function PageLink({
@@ -21,8 +22,10 @@ function PageLink({
   );
 }
 
-export function PartsPagination({ query, total }: { query: PartsQuery; total: number }) {
+export async function PartsPagination({ query, total }: { query: PartsQuery; total: number }) {
+  const { t, intlLocale } = await getI18n();
   const { page, pageSize } = query;
+  const number = (value: number) => value.toLocaleString(intlLocale);
   const lastPage = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : Math.min((page - 1) * pageSize + 1, total);
   const to = Math.min(page * pageSize, total);
@@ -30,7 +33,7 @@ export function PartsPagination({ query, total }: { query: PartsQuery; total: nu
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-500">
       <div className="flex items-center gap-2">
-        <span>Eilučių puslapyje:</span>
+        <span>{t("pagination.rowsPerPage")}</span>
         {PAGE_SIZES.map((size) => (
           <Link
             key={size}
@@ -43,9 +46,7 @@ export function PartsPagination({ query, total }: { query: PartsQuery; total: nu
         ))}
       </div>
       <div className="flex items-center gap-2 tabular-nums">
-        <span>
-          {from.toLocaleString("lt-LT")}–{to.toLocaleString("lt-LT")} iš {total.toLocaleString("lt-LT")}
-        </span>
+        <span>{t("pagination.range", { from: number(from), to: number(to), total: number(total) })}</span>
         <PageLink query={query} page={1} label="«" disabled={page <= 1} />
         <PageLink query={query} page={page - 1} label="‹" disabled={page <= 1} />
         <PageLink query={query} page={page + 1} label="›" disabled={page >= lastPage} />

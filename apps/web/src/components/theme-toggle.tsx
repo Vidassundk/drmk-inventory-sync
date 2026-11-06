@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/components/i18n-provider";
 import { THEME_COOKIE, type Theme } from "@/lib/theme";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
@@ -15,12 +16,14 @@ function toggleTheme() {
 
 /** Both icons are rendered and CSS shows the right one, because the server can't know the system setting. */
 export function ThemeToggle() {
+  const { t } = useI18n();
+
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label="Perjungti šviesią ar tamsią temą"
-      title="Perjungti temą"
+      aria-label={t("theme.toggle")}
+      title={t("theme.title")}
       className="grid size-8 place-items-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900"
     >
       <svg

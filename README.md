@@ -43,6 +43,10 @@ Fill in `.env`. It is gitignored, so credentials never reach the repo. Then chec
 pnpm smoke:rrr
 ```
 
+## Translations
+
+Interface text lives in `apps/web/src/messages`, one JSON file per language. Add a key to `lt.json` first; a key missing from `en.json` or `ru.json` fails the typecheck. Visitors pick a language in the header, and it's saved in a cookie. Only the website is translated: data from RRR, like part names and car details, stays in Lithuanian on purpose.
+
 ## Commands
 
 | Command                                         | What it does                                                                                        |

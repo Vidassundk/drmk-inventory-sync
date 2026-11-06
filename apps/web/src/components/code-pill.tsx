@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/components/i18n-provider";
 
 const COPIED_MS = 1500;
 
 export function CodePill({ code, primary = false }: { code: string; primary?: boolean }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -23,8 +25,8 @@ export function CodePill({ code, primary = false }: { code: string; primary?: bo
       <button
         type="button"
         onClick={copy}
-        aria-label={copied ? `Kodas ${code} nukopijuotas` : `Kopijuoti kodą ${code}`}
-        title={copied ? "Nukopijuota" : "Kopijuoti"}
+        aria-label={t(copied ? "code.copied" : "code.copy", { code })}
+        title={t(copied ? "code.copiedTitle" : "code.copyTitle")}
         className="rounded-full p-1 text-zinc-500 hover:bg-zinc-200 hover:text-foreground dark:hover:bg-zinc-800"
       >
         <svg

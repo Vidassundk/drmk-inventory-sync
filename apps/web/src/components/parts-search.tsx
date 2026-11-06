@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/components/i18n-provider";
 import { partsHref, type PartsQuery } from "@/lib/parts-query";
 
 const DEBOUNCE_MS = 300;
 
 export function PartsSearch({ query }: { query: PartsQuery }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [pending, startTransition] = useTransition();
   const input = useRef<HTMLInputElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -33,8 +35,8 @@ export function PartsSearch({ query }: { query: PartsQuery }) {
       type="search"
       defaultValue={query.q}
       onChange={(event) => search(event.target.value)}
-      placeholder="Ieškoti pagal pavadinimą, kodą, automobilį ar ID"
-      aria-label="Ieškoti dalių"
+      placeholder={t("parts.searchPlaceholder")}
+      aria-label={t("parts.searchLabel")}
       aria-busy={pending}
       className="h-9 w-full min-w-0 flex-1 rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-blue-600 aria-busy:opacity-60 dark:border-zinc-700"
     />

@@ -2,16 +2,17 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { CodePill } from "@/components/code-pill";
 import { PartCover } from "@/components/part-cover";
-import { columnOf, type PartColumnKey } from "@/lib/part-columns";
+import type { I18n } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n-server";
+import type { PartColumnKey } from "@/lib/part-columns";
 import { similarPartsHref } from "@/lib/parts-query";
 import {
   carDetails,
   carTitle,
   formatPrice,
-  itemCount,
   positionLabel,
   qualityLabel,
-  STATUS_LABELS,
+  statusLabel,
   userName,
 } from "@/lib/part-format";
 import type { PartRow } from "@/lib/parts";
@@ -25,7 +26,7 @@ const longText = (value: string | null) =>
   value ? <div className="line-clamp-3 whitespace-pre-line">{value}</div> : "–";
 
 /** How each column renders. `cell` sets the classes on its td, and so its width. */
-const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow) => ReactNode }> = {
+const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow, i18n: I18n) => ReactNode }> = {
   id: { cell: "font-medium tabular-nums", render: (part) => part.rrrId },
   photo: {
     render: (part) => <PartCover src={part.coverUrl} alt={part.name} photoCount={part.photoCount} />,
@@ -57,16 +58,16 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow) => R
       );
     },
   },
-  price: { cell: "whitespace-nowrap tabular-nums", render: formatPrice },
+  price: { cell: "whitespace-nowrap tabular-nums", render: (part, i18n) => formatPrice(i18n, part) },
   stock: {
     cell: "whitespace-nowrap tabular-nums",
-    render: ({ stock, categoryId, carModelId, currency }) =>
+    render: ({ stock, categoryId, carModelId, currency }, i18n) =>
       stock && categoryId && carModelId ? (
         <>
           <Link href={similarPartsHref(categoryId, carModelId)} className="text-blue-600 hover:underline">
-            {itemCount(stock.count)}
+            {i18n.count("items", stock.count)}
           </Link>
-          <div className="text-xs text-zinc-500">{formatPrice({ price: stock.averagePrice, currency })}</div>
+          <div className="text-xs text-zinc-500">{formatPrice(i18n, { price: stock.averagePrice, currency })}</div>
         </>
       ) : (
         "–"
@@ -89,19 +90,21 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow) => R
         "–"
       ),
   },
-  position: { cell: NOWRAP, render: (part) => text(positionLabel(part.positionCode)) },
-  quality: { cell: NOWRAP, render: (part) => qualityLabel(part.quality) },
+  position: { cell: NOWRAP, render: (part, i18n) => text(positionLabel(i18n, part.positionCode)) },
+  quality: { cell: NOWRAP, render: (part, i18n) => qualityLabel(i18n, part.quality) },
   adText: { cell: "min-w-40 max-w-64", render: (part) => longText(part.notes) },
-  status: { cell: NOWRAP, render: (part) => STATUS_LABELS[part.status] },
+  status: { cell: NOWRAP, render: (part, i18n) => statusLabel(i18n, part.status) },
   reservedBy: { cell: NOWRAP, render: (part) => text(userName(part.reservedByUser)) },
   reservedAt: { cell: MUTED, render: (part) => text(part.reservedAt?.slice(0, 10)) },
   createdBy: { cell: NOWRAP, render: (part) => text(userName(part.createdByUser)) },
   listedAt: { cell: MUTED, render: (part) => part.listedAt?.slice(0, 10) },
 };
 
-export function PartsTable({ rows, columns }: { rows: PartRow[]; columns: PartColumnKey[] }) {
+export async function PartsTable({ rows, columns }: { rows: PartRow[]; columns: PartColumnKey[] }) {
+  const i18n = await getI18n();
+
   if (rows.length === 0) {
-    return <p className="py-16 text-center text-sm text-zinc-500">Dalių nerasta.</p>;
+    return <p className="py-16 text-center text-sm text-zinc-500">{i18n.t("parts.empty")}</p>;
   }
 
   return (
@@ -111,7 +114,7 @@ export function PartsTable({ rows, columns }: { rows: PartRow[]; columns: PartCo
           <tr>
             {columns.map((key) => (
               <th key={key} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
-                {columnOf(key).label}
+                {i18n.t(`columns.${key}`)}
               </th>
             ))}
           </tr>
@@ -121,7 +124,7 @@ export function PartsTable({ rows, columns }: { rows: PartRow[]; columns: PartCo
             <tr key={part.id} className="align-top">
               {columns.map((key) => (
                 <td key={key} className={`px-3 py-2 ${CELLS[key].cell ?? ""}`}>
-                  {CELLS[key].render(part)}
+                  {CELLS[key].render(part, i18n)}
                 </td>
               ))}
             </tr>
