@@ -89,10 +89,8 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow) => R
         "–"
       ),
   },
-  otherInfo: { cell: NOWRAP, render: (part) => text(positionLabel(part.positionCode)) },
+  position: { cell: NOWRAP, render: (part) => text(positionLabel(part.positionCode)) },
   quality: { cell: NOWRAP, render: (part) => qualityLabel(part.quality) },
-  place: { cell: MUTED, render: (part) => text(part.placeCode) },
-  internalNotes: { cell: "min-w-40 max-w-64", render: (part) => longText(part.internalNotes) },
   adText: { cell: "min-w-40 max-w-64", render: (part) => longText(part.notes) },
   status: { cell: NOWRAP, render: (part) => STATUS_LABELS[part.status] },
   reservedBy: { cell: NOWRAP, render: (part) => text(userName(part.reservedByUser)) },

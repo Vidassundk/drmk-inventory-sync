@@ -27,7 +27,7 @@ The two rows that didn't match, and a few € figures, are most likely prices or
 ## Missing columns
 
 - [ ] **Pardavimo kaina, data, kanalas:** needs an orders sync from `/v2/get/orders`. Those records include customer names, addresses and phone numbers, so store only sale details.
-- [ ] **Vieta:** the API only gives a code (`73` is "VAIRO KOLONĖLĖS A"). Needs a list of codes and names from RRR or the team.
+- [ ] **Vieta (storage location):** removed for now, because the API only gives a code (`73` is "VAIRO KOLONĖLĖS A"). Bring it back with a list of codes and names from RRR or the team.
 - [ ] **Sukūrė, Rezervavo:** RRR has no user list. Names for user IDs `9` and `1` are missing from `USER_NAMES` in `apps/web/src/lib/part-format.ts`.
 - [ ] **Suderinama pagal regioną, Šaltinis:** not in the parts data the API gives us. Ask RRR whether they're available anywhere.
 - [ ] **Veiksmai:** comes with phase 2, because the dashboard is read-only for now.

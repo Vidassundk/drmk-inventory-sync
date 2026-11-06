@@ -67,10 +67,8 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
               </>
             )}
           </Field>
-          <Field label="Kita informacija">{positionLabel(part.positionCode)}</Field>
-          <Field label="Vieta (kodas)">{part.placeCode}</Field>
+          <Field label="Detalės padėtis (vieta)">{positionLabel(part.positionCode)}</Field>
           <Field label="Skelbimo tekstas">{part.notes}</Field>
-          <Field label="Vidinė pastaba">{part.internalNotes}</Field>
           <Field label="Rezervavo">{userName(part.reservedByUser)}</Field>
           <Field label="Rezervacijos data">{part.reservedAt?.slice(0, 10)}</Field>
           <Field label="Sukūrė">{userName(part.createdByUser)}</Field>

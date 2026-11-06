@@ -26,7 +26,6 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Fields still kept only in the raw RRR payload. They move to real columns if we need to sort or filter by them. */
 const rawColumns = {
-  placeCode: sql<string | null>`${partListings.raw}->>'place'`,
   positionCode: sql<string | null>`${partListings.raw}->>'position'`,
   createdByUser: sql<string | null>`${partListings.raw}->>'mechanic'`,
   reservedByUser: sql<string | null>`${partListings.raw}->>'reserved_user'`,
@@ -184,7 +183,6 @@ export async function listParts({ tab, q, page, pageSize, category, model }: Par
         quality: parts.quality,
         category: rrrCategories.name,
         notes: parts.notes,
-        internalNotes: parts.internalNotes,
         ...rawColumns,
         ...carColumns,
         listedAt: parts.listedAt,
@@ -297,7 +295,6 @@ export const getPart = cache(async (id: string) => {
         visibleCode: parts.visibleCode,
         otherCode: parts.otherCode,
         notes: parts.notes,
-        internalNotes: parts.internalNotes,
         price: parts.price,
         currency: parts.currency,
         quality: parts.quality,

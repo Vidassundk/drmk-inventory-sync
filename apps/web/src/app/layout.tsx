@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { parseTheme, THEME_COOKIE } from "@/lib/theme";
 import "./globals.css";
@@ -29,8 +30,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="lt" data-theme={theme} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-2 md:px-6 dark:border-zinc-800">
-          <Link href="/parts" className="text-sm font-semibold">
-            DRMK Inventory
+          <Link href="/parts" aria-label="Dalys">
+            <Logo className="h-6 w-auto" />
           </Link>
           <ThemeToggle />
         </header>
