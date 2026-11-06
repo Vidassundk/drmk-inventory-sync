@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { CodePill } from "@/components/code-pill";
 import { PartCover } from "@/components/part-cover";
 import { columnOf, type PartColumnKey } from "@/lib/part-columns";
 import { similarPartsHref } from "@/lib/parts-query";
@@ -41,11 +42,20 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow) => R
     ),
   },
   codes: {
-    cell: "font-mono text-xs whitespace-nowrap",
-    render: (part) =>
-      [part.manufacturerCode, part.visibleCode, part.otherCode]
-        .filter(Boolean)
-        .map((code) => <div key={code}>{code}</div>),
+    cell: "whitespace-nowrap",
+    render: (part) => {
+      // A part can repeat one code across its code fields.
+      const codes = [
+        ...new Set([part.manufacturerCode, part.visibleCode, part.otherCode].filter((code) => code !== null)),
+      ];
+      return (
+        <div className="flex flex-col items-start gap-1">
+          {codes.map((code, index) => (
+            <CodePill key={code} code={code} primary={index === 0} />
+          ))}
+        </div>
+      );
+    },
   },
   price: { cell: "whitespace-nowrap tabular-nums", render: formatPrice },
   stock: {
