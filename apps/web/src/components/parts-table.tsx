@@ -1,23 +1,109 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { PartCover } from "@/components/part-cover";
-import { carDetails, carTitle, formatPrice, qualityLabel, STATUS_LABELS } from "@/lib/part-format";
+import { columnOf, type PartColumnKey } from "@/lib/part-columns";
+import { similarPartsHref } from "@/lib/parts-query";
+import {
+  carDetails,
+  carTitle,
+  formatPrice,
+  itemCount,
+  positionLabel,
+  qualityLabel,
+  STATUS_LABELS,
+  userName,
+} from "@/lib/part-format";
 import type { PartRow } from "@/lib/parts";
 
-const HEADERS = ["ID", "Foto", "Dalis", "Dalies kodai", "Kaina", "Automobilis", "Kokybė", "Statusas", "Pridėta"];
+const NOWRAP = "whitespace-nowrap";
+const MUTED = "whitespace-nowrap text-zinc-500 tabular-nums";
 
-export function PartsTable({ rows }: { rows: PartRow[] }) {
+const text = (value: string | null | undefined) => value || "–";
+
+const longText = (value: string | null) =>
+  value ? <div className="line-clamp-3 whitespace-pre-line">{value}</div> : "–";
+
+/** How each column renders. `cell` sets the classes on its td, and so its width. */
+const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow) => ReactNode }> = {
+  id: { cell: "font-medium tabular-nums", render: (part) => part.rrrId },
+  photo: {
+    render: (part) => <PartCover src={part.coverUrl} alt={part.name} photoCount={part.photoCount} />,
+  },
+  part: {
+    cell: "min-w-48 max-w-64",
+    render: (part) => (
+      <>
+        <Link href={`/parts/${part.id}`} className="font-medium hover:underline">
+          {part.name}
+        </Link>
+        {part.category && part.category !== part.name && <div className="text-xs text-zinc-500">{part.category}</div>}
+      </>
+    ),
+  },
+  codes: {
+    cell: "font-mono text-xs whitespace-nowrap",
+    render: (part) =>
+      [part.manufacturerCode, part.visibleCode, part.otherCode]
+        .filter(Boolean)
+        .map((code) => <div key={code}>{code}</div>),
+  },
+  price: { cell: "whitespace-nowrap tabular-nums", render: formatPrice },
+  stock: {
+    cell: "whitespace-nowrap tabular-nums",
+    render: ({ stock, categoryId, carModelId, currency }) =>
+      stock && categoryId && carModelId ? (
+        <>
+          <Link href={similarPartsHref(categoryId, carModelId)} className="text-blue-600 hover:underline">
+            {itemCount(stock.count)}
+          </Link>
+          <div className="text-xs text-zinc-500">{formatPrice({ price: stock.averagePrice, currency })}</div>
+        </>
+      ) : (
+        "–"
+      ),
+  },
+  car: {
+    cell: "min-w-64 max-w-72",
+    render: (part) =>
+      part.rrrCarId ? (
+        <>
+          <div className="font-medium">
+            <span className="mr-1.5 rounded bg-zinc-100 px-1 text-xs font-normal text-zinc-500 tabular-nums dark:bg-zinc-900">
+              {part.rrrCarId}
+            </span>
+            {carTitle(part)}
+          </div>
+          <div className="text-xs text-zinc-500">{carDetails(part)}</div>
+        </>
+      ) : (
+        "–"
+      ),
+  },
+  otherInfo: { cell: NOWRAP, render: (part) => text(positionLabel(part.positionCode)) },
+  quality: { cell: NOWRAP, render: (part) => qualityLabel(part.quality) },
+  place: { cell: MUTED, render: (part) => text(part.placeCode) },
+  internalNotes: { cell: "min-w-40 max-w-64", render: (part) => longText(part.internalNotes) },
+  adText: { cell: "min-w-40 max-w-64", render: (part) => longText(part.notes) },
+  status: { cell: NOWRAP, render: (part) => STATUS_LABELS[part.status] },
+  reservedBy: { cell: NOWRAP, render: (part) => text(userName(part.reservedByUser)) },
+  reservedAt: { cell: MUTED, render: (part) => text(part.reservedAt?.slice(0, 10)) },
+  createdBy: { cell: NOWRAP, render: (part) => text(userName(part.createdByUser)) },
+  listedAt: { cell: MUTED, render: (part) => part.listedAt?.slice(0, 10) },
+};
+
+export function PartsTable({ rows, columns }: { rows: PartRow[]; columns: PartColumnKey[] }) {
   if (rows.length === 0) {
     return <p className="py-16 text-center text-sm text-zinc-500">Dalių nerasta.</p>;
   }
 
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
-      <table className="w-full min-w-[70rem] text-left text-sm">
+      <table className="w-max min-w-full text-left text-sm">
         <thead className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
           <tr>
-            {HEADERS.map((header) => (
-              <th key={header} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
-                {header}
+            {columns.map((key) => (
+              <th key={key} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
+                {columnOf(key).label}
               </th>
             ))}
           </tr>
@@ -25,42 +111,11 @@ export function PartsTable({ rows }: { rows: PartRow[] }) {
         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
           {rows.map((part) => (
             <tr key={part.id} className="align-top">
-              <td className="px-3 py-2 font-medium tabular-nums">{part.rrrId}</td>
-              <td className="px-3 py-2">
-                <PartCover src={part.coverUrl} alt={part.name} photoCount={part.photoCount} />
-              </td>
-              <td className="max-w-64 px-3 py-2">
-                <Link href={`/parts/${part.id}`} className="font-medium hover:underline">
-                  {part.name}
-                </Link>
-                {part.category && part.category !== part.name && (
-                  <div className="text-xs text-zinc-500">{part.category}</div>
-                )}
-              </td>
-              <td className="px-3 py-2 font-mono text-xs">
-                {[part.manufacturerCode, part.visibleCode, part.otherCode].filter(Boolean).map((code) => (
-                  <div key={code}>{code}</div>
-                ))}
-              </td>
-              <td className="px-3 py-2 whitespace-nowrap tabular-nums">{formatPrice(part)}</td>
-              <td className="max-w-72 px-3 py-2">
-                {part.rrrCarId ? (
-                  <>
-                    <div className="font-medium">
-                      <span className="mr-1.5 rounded bg-zinc-100 px-1 text-xs font-normal text-zinc-500 tabular-nums dark:bg-zinc-900">
-                        {part.rrrCarId}
-                      </span>
-                      {carTitle(part)}
-                    </div>
-                    <div className="text-xs text-zinc-500">{carDetails(part)}</div>
-                  </>
-                ) : (
-                  "–"
-                )}
-              </td>
-              <td className="px-3 py-2 whitespace-nowrap">{qualityLabel(part.quality)}</td>
-              <td className="px-3 py-2 whitespace-nowrap">{STATUS_LABELS[part.status]}</td>
-              <td className="px-3 py-2 whitespace-nowrap text-zinc-500 tabular-nums">{part.listedAt?.slice(0, 10)}</td>
+              {columns.map((key) => (
+                <td key={key} className={`px-3 py-2 ${CELLS[key].cell ?? ""}`}>
+                  {CELLS[key].render(part)}
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>

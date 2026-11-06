@@ -4,7 +4,7 @@ import * as schema from "./schema.ts";
 
 export * from "./schema.ts";
 // Re-exported so every app uses this copy of drizzle-orm; a second copy breaks its types.
-export { and, asc, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+export { and, asc, count, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 export { schema };
 
 export type Db = ReturnType<typeof createDb>["db"];

@@ -36,7 +36,7 @@ export function PartsSearch({ query }: { query: PartsQuery }) {
       placeholder="Ieškoti pagal pavadinimą, kodą, automobilį ar ID"
       aria-label="Ieškoti dalių"
       aria-busy={pending}
-      className="h-9 w-full max-w-md rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-blue-600 aria-busy:opacity-60 dark:border-zinc-700"
+      className="h-9 w-full min-w-0 flex-1 rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-blue-600 aria-busy:opacity-60 dark:border-zinc-700"
     />
   );
 }

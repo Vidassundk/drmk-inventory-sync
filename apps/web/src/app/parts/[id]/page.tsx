@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { BackToList } from "@/components/back-to-list";
 import { PartGallery } from "@/components/part-gallery";
-import { carDetails, carTitle, formatPrice, qualityLabel, STATUS_LABELS } from "@/lib/part-format";
+import { SimilarParts } from "@/components/similar-parts";
+import {
+  carDetails,
+  carTitle,
+  formatPrice,
+  positionLabel,
+  qualityLabel,
+  STATUS_LABELS,
+  userName,
+} from "@/lib/part-format";
 import { getPart } from "@/lib/parts";
 
 export async function generateMetadata({ params }: PageProps<"/parts/[id]">): Promise<Metadata> {
@@ -58,8 +67,13 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
               </>
             )}
           </Field>
-          <Field label="Pastabos">{part.notes}</Field>
+          <Field label="Kita informacija">{positionLabel(part.positionCode)}</Field>
+          <Field label="Vieta (kodas)">{part.placeCode}</Field>
+          <Field label="Skelbimo tekstas">{part.notes}</Field>
           <Field label="Vidinė pastaba">{part.internalNotes}</Field>
+          <Field label="Rezervavo">{userName(part.reservedByUser)}</Field>
+          <Field label="Rezervacijos data">{part.reservedAt?.slice(0, 10)}</Field>
+          <Field label="Sukūrė">{userName(part.createdByUser)}</Field>
           <Field label="Pridėta">{part.listedAt?.slice(0, 10)}</Field>
           <Field label="RRR">
             {part.rrrUrl && (
@@ -70,6 +84,9 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
           </Field>
         </dl>
       </div>
+      <Suspense>
+        <SimilarParts part={part} />
+      </Suspense>
     </main>
   );
 }

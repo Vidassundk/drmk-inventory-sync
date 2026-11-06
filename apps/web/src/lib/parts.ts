@@ -7,6 +7,7 @@ import {
   images,
   inArray,
   isNull,
+  ne,
   or,
   partImages,
   partListings,
@@ -23,8 +24,19 @@ import type { PartsQuery, PartTab } from "./parts-query";
 const MAX_SEARCH_TERMS = 5;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Fields still kept only in the raw RRR payload. They move to real columns if we need to sort or filter by them. */
+const rawColumns = {
+  placeCode: sql<string | null>`${partListings.raw}->>'place'`,
+  positionCode: sql<string | null>`${partListings.raw}->>'position'`,
+  createdByUser: sql<string | null>`${partListings.raw}->>'mechanic'`,
+  reservedByUser: sql<string | null>`${partListings.raw}->>'reserved_user'`,
+  reservedAt: sql<string | null>`${partListings.raw}->>'reserved_date'`,
+};
+
 const carColumns = {
   rrrCarId: parts.rrrCarId,
+  categoryId: parts.rrrCategoryId,
+  carModelId: rrrCars.modelId,
   carBrand: rrrCarModels.brand,
   carModel: rrrCarModels.name,
   carYearStart: rrrCarModels.yearStart,
@@ -44,20 +56,71 @@ export function imageUrl(image: { storageKey: string | null; sourceUrl: string |
   return image.sourceUrl;
 }
 
+const inStock = () => inArray(parts.status, ["in_stock", "reserved"]);
+
 function tabFilter(tab: PartTab) {
-  const inStock = inArray(parts.status, ["in_stock", "reserved"]);
   switch (tab) {
     case "stock":
-      return inStock;
+      return inStock();
     case "reserved":
       return eq(parts.status, "reserved");
     case "sold":
       return eq(parts.status, "sold");
     case "noPrice":
-      return and(inStock, or(isNull(parts.price), eq(parts.price, "0")));
+      return and(inStock(), or(isNull(parts.price), eq(parts.price, "0")));
     case "all":
       return undefined;
   }
+}
+
+function similarFilter({ category, model }: Pick<PartsQuery, "category" | "model">) {
+  return and(
+    category ? eq(parts.rrrCategoryId, category) : undefined,
+    model
+      ? sql`${parts.rrrCarId} in (select ${rrrCars.id} from ${rrrCars} where ${rrrCars.modelId} = ${model})`
+      : undefined,
+  );
+}
+
+type StockGroup = { categoryId: number | null; carModelId: number | null };
+const groupKey = ({ categoryId, carModelId }: StockGroup) =>
+  categoryId && carModelId ? `${categoryId}:${carModelId}` : null;
+
+/**
+ * RRR's "Sandėlyje": how many parts are in stock with the same category and car model, and their average
+ * price leaving out parts with no price. Runs for one page of rows, so it costs one small grouped query.
+ */
+async function stockFor(groups: StockGroup[]) {
+  const pairs = new Map(
+    groups.flatMap((group) => {
+      const key = groupKey(group);
+      return key ? [[key, group] as const] : [];
+    }),
+  );
+  if (pairs.size === 0) return new Map<string, { count: number; averagePrice: string | null }>();
+
+  const stats = await getDb()
+    .select({
+      categoryId: parts.rrrCategoryId,
+      carModelId: rrrCars.modelId,
+      count: count(),
+      averagePrice: sql<string | null>`avg(nullif(${parts.price}, 0))`,
+    })
+    .from(parts)
+    .innerJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
+    .where(
+      and(
+        inStock(),
+        isNull(parts.deletedAt),
+        sql`(${parts.rrrCategoryId}, ${rrrCars.modelId}) in (${sql.join(
+          [...pairs.values()].map((pair) => sql`(${pair.categoryId}::int, ${pair.carModelId}::int)`),
+          sql`, `,
+        )})`,
+      ),
+    )
+    .groupBy(parts.rrrCategoryId, rrrCars.modelId);
+
+  return new Map(stats.map(({ count, averagePrice, ...group }) => [groupKey(group)!, { count, averagePrice }]));
 }
 
 /** One search word: found in the part's name or codes, or in its car's brand and model. */
@@ -86,9 +149,9 @@ function searchFilter(q: string) {
   return or(text, byRrrId);
 }
 
-export async function listParts({ tab, q, page, pageSize }: PartsQuery) {
+export async function listParts({ tab, q, page, pageSize, category, model }: PartsQuery) {
   const db = getDb();
-  const where = and(isNull(parts.deletedAt), tabFilter(tab), searchFilter(q));
+  const where = and(isNull(parts.deletedAt), tabFilter(tab), searchFilter(q), similarFilter({ category, model }));
 
   // Must match the parts_listed_idx order, or Postgres sorts the whole table for every page.
   const newestFirst = [sql`${parts.listedAt} desc nulls last`, sql`${parts.id} desc nulls last`];
@@ -104,7 +167,8 @@ export async function listParts({ tab, q, page, pageSize }: PartsQuery) {
     .offset((page - 1) * pageSize)
     .as("page_ids");
 
-  // Rows and total run at the same time. Only the columns the table shows are read, never the raw payload.
+  // Rows and total run at the same time. Only the fields the table can show are read, and the raw
+  // payload is only touched for the page's own rows.
   const [rows, [{ total }]] = await Promise.all([
     db
       .select({
@@ -119,6 +183,9 @@ export async function listParts({ tab, q, page, pageSize }: PartsQuery) {
         status: parts.status,
         quality: parts.quality,
         category: rrrCategories.name,
+        notes: parts.notes,
+        internalNotes: parts.internalNotes,
+        ...rawColumns,
         ...carColumns,
         listedAt: parts.listedAt,
         storageKey: images.storageKey,
@@ -137,10 +204,76 @@ export async function listParts({ tab, q, page, pageSize }: PartsQuery) {
     db.select({ total: count() }).from(parts).where(where),
   ]);
 
+  const stock = await stockFor(rows);
+
   return {
     total,
     rows: rows.map(({ storageKey, sourceUrl, ...part }) => ({
       ...part,
+      coverUrl: imageUrl({ storageKey, sourceUrl }),
+      stock: stock.get(groupKey(part) ?? "") ?? null,
+    })),
+  };
+}
+
+/** The category and car model behind a "Sandėlyje" link, for the filter label above the list. */
+export async function similarFilterLabel({ category, model }: Pick<PartsQuery, "category" | "model">) {
+  if (!category && !model) return null;
+  const db = getDb();
+  const [[categoryRow], [modelRow]] = await Promise.all([
+    category ? db.select({ name: rrrCategories.name }).from(rrrCategories).where(eq(rrrCategories.id, category)) : [],
+    model
+      ? db
+          .select({ brand: rrrCarModels.brand, name: rrrCarModels.name })
+          .from(rrrCarModels)
+          .where(eq(rrrCarModels.id, model))
+      : [],
+  ]);
+  return [categoryRow?.name, modelRow && `${modelRow.brand} ${modelRow.name}`].filter(Boolean).join(" · ");
+}
+
+/** Other in-stock parts counted with this one by "Sandėlyje". */
+export async function listSimilarParts(part: StockGroup & { id: string }, limit: number) {
+  const { categoryId, carModelId } = part;
+  if (!categoryId || !carModelId) return { rows: [], total: 0 };
+
+  const db = getDb();
+  const where = and(
+    inStock(),
+    isNull(parts.deletedAt),
+    similarFilter({ category: categoryId, model: carModelId }),
+    ne(parts.id, part.id),
+  );
+
+  const [rows, [{ total }]] = await Promise.all([
+    db
+      .select({
+        id: parts.id,
+        rrrId: partListings.externalId,
+        name: parts.name,
+        price: parts.price,
+        currency: parts.currency,
+        status: parts.status,
+        carYear: rrrCars.year,
+        storageKey: images.storageKey,
+        sourceUrl: images.sourceUrl,
+        photoCount: sql<number>`(select count(*)::int from ${partImages} where ${partImages.partId} = ${parts.id})`,
+      })
+      .from(parts)
+      .leftJoin(partListings, and(eq(partListings.partId, parts.id), eq(partListings.channelId, "rrr")))
+      .leftJoin(partImages, and(eq(partImages.partId, parts.id), eq(partImages.position, 0)))
+      .leftJoin(images, eq(images.id, partImages.imageId))
+      .leftJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
+      .where(where)
+      .orderBy(sql`${parts.listedAt} desc nulls last`, sql`${parts.id} desc nulls last`)
+      .limit(limit),
+    db.select({ total: count() }).from(parts).where(where),
+  ]);
+
+  return {
+    total,
+    rows: rows.map(({ storageKey, sourceUrl, ...similar }) => ({
+      ...similar,
       coverUrl: imageUrl({ storageKey, sourceUrl }),
     })),
   };
@@ -158,7 +291,6 @@ export const getPart = cache(async (id: string) => {
       .select({
         id: parts.id,
         rrrId: partListings.externalId,
-        // Read for this one part only; the list never touches the raw payload.
         rrrUrl: sql<string | null>`${partListings.raw}->>'shop_url'`,
         name: parts.name,
         manufacturerCode: parts.manufacturerCode,
@@ -173,6 +305,7 @@ export const getPart = cache(async (id: string) => {
         listedAt: parts.listedAt,
         deletedAt: parts.deletedAt,
         categoryPath: rrrCategories.path,
+        ...rawColumns,
         ...carColumns,
       })
       .from(parts)
