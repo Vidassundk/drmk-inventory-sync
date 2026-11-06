@@ -101,6 +101,7 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
   }
 
   const showingAll = settings.hidden.length === 0;
+  const hidingAll = settings.order.every((key) => isLocked(key) || settings.hidden.includes(key));
   const term = search.trim().toLowerCase();
   const shown = settings.order.filter((key) => columnOf(key).label.toLowerCase().includes(term));
 
@@ -109,9 +110,21 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
       <button
         type="button"
         onClick={() => dialog.current?.showModal()}
-        className="h-9 shrink-0 rounded-md border border-zinc-300 px-3 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+        aria-label="Lentelės nustatymai"
+        title="Lentelės nustatymai"
+        className="grid size-9 shrink-0 place-items-center rounded-md border border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
       >
-        Stulpeliai
+        <svg
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+          className="size-4 fill-none stroke-current stroke-[1.5]"
+          strokeLinecap="round"
+        >
+          <path d="M2 4h6.5M12 4h2M2 8h2M7.5 8H14M2 12h6.5M12 12h2" />
+          <circle cx="10.25" cy="4" r="1.75" />
+          <circle cx="5.75" cy="8" r="1.75" />
+          <circle cx="10.25" cy="12" r="1.75" />
+        </svg>
       </button>
       <dialog
         ref={dialog}
@@ -133,6 +146,9 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input
+              ref={(checkbox) => {
+                if (checkbox) checkbox.indeterminate = !showingAll && !hidingAll;
+              }}
               type="checkbox"
               checked={showingAll}
               onChange={() =>
