@@ -13,11 +13,11 @@ import {
   type PartStatus,
 } from "@/lib/parts-query";
 
-type Filter = "status" | "price";
+type Filter = "status" | "price" | "brand";
 type Apply = (changes: Partial<PartsQuery>) => void;
 
-const FILTERS: Filter[] = ["status", "price"];
-const FILTER_LABELS = { status: "columns.status", price: "columns.price" } as const;
+const FILTERS: Filter[] = ["status", "price", "brand"];
+const FILTER_LABELS = { status: "columns.status", price: "columns.price", brand: "filters.brand" } as const;
 // Panels sit under their chip, but under the whole row on phones, where a chip near the edge would push them off-screen.
 const PANEL =
   "absolute top-full left-0 z-20 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-lg border border-zinc-200 bg-background shadow-lg dark:border-zinc-800";
@@ -133,6 +133,53 @@ function PricePanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
   );
 }
 
+function BrandPanel({ query, brands, apply }: { query: PartsQuery; brands: string[]; apply: Apply }) {
+  const { t } = useI18n();
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(query.brand);
+  const term = search.trim().toLowerCase();
+  const shown = brands.filter((brand) => brand.toLowerCase().includes(term));
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    // Typing then pressing Enter means the top match, unless a brand that's still listed was clicked.
+    const clicked = selected && shown.includes(selected) ? selected : null;
+    apply({ brand: clicked ?? (term ? (shown[0] ?? null) : selected) });
+  }
+
+  return (
+    <form onSubmit={submit} className={PANEL}>
+      <div className="p-2">
+        <input
+          type="search"
+          autoFocus
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t("filters.chooseOption")}
+          aria-label={t("filters.brand")}
+          className="h-9 w-full rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-accent dark:border-zinc-700"
+        />
+      </div>
+      <ul className="max-h-80 overflow-y-auto">
+        {shown.map((brand) => (
+          <li key={brand}>
+            <button
+              type="button"
+              onClick={() => setSelected(brand)}
+              aria-pressed={brand === selected}
+              className="w-full px-3 py-1.5 text-left text-sm hover:bg-zinc-100 aria-pressed:bg-zinc-100 aria-pressed:font-medium aria-pressed:text-accent-text dark:hover:bg-zinc-900 dark:aria-pressed:bg-zinc-900"
+            >
+              {brand}
+            </button>
+          </li>
+        ))}
+        {shown.length === 0 && <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.noOptions")}</li>}
+      </ul>
+      <PanelFooter onClear={() => apply({ brand: null })} />
+    </form>
+  );
+}
+
 function AddFilterMenu({ onChoose }: { onChoose: (filter: Filter) => void }) {
   const { t } = useI18n();
   const [search, setSearch] = useState("");
@@ -225,7 +272,7 @@ function priceSummary({ priceMin, priceMax, noPrice }: PartsQuery, noPriceLabel:
   return undefined;
 }
 
-export function PartsFilters({ query }: { query: PartsQuery }) {
+export function PartsFilters({ query, brands }: { query: PartsQuery; brands: string[] }) {
   const i18n = useI18n();
   const { t } = i18n;
   const router = useRouter();
@@ -261,6 +308,7 @@ export function PartsFilters({ query }: { query: PartsQuery }) {
   const priceValueText = priceSummary(query, t("tabs.noPrice"));
   const showStatus = query.statuses.length > 0 || open === "status";
   const showPrice = priceValueText !== undefined || open === "price";
+  const showBrand = query.brand !== null || open === "brand";
 
   return (
     <div ref={root} className="relative flex flex-wrap items-center gap-2">
@@ -284,6 +332,17 @@ export function PartsFilters({ query }: { query: PartsQuery }) {
           onRemove={() => apply({ noPrice: false, priceMin: null, priceMax: null })}
         >
           <PricePanel query={query} apply={apply} />
+        </FilterChip>
+      )}
+      {showBrand && (
+        <FilterChip
+          label={t("filters.brand")}
+          value={query.brand ?? undefined}
+          open={open === "brand"}
+          onToggle={() => toggle("brand")}
+          onRemove={() => apply({ brand: null })}
+        >
+          <BrandPanel query={query} brands={brands} apply={apply} />
         </FilterChip>
       )}
       <div className="md:relative">

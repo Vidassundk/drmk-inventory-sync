@@ -10,7 +10,7 @@ import { PartsTableSettings } from "@/components/parts-table-settings";
 import { PartsTabs } from "@/components/parts-tabs";
 import { getI18n } from "@/lib/i18n-server";
 import { COLUMNS_COOKIE, parseColumnSettings, visibleColumns, type PartColumnKey } from "@/lib/part-columns";
-import { listParts, similarFilterLabel } from "@/lib/parts";
+import { listCarBrands, listParts, similarFilterLabel } from "@/lib/parts";
 import { parsePartsQuery, partsHref, type PartsQuery } from "@/lib/parts-query";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -67,7 +67,7 @@ export default async function PartsPage({ searchParams }: PageProps<"/parts">) {
         </div>
       </div>
       <PartsTabs query={query} />
-      <PartsFilters query={query} />
+      <PartsFilters query={query} brands={await listCarBrands()} />
       <Suspense key={partsHref(query)} fallback={<PartsSkeleton />}>
         <PartsResults query={query} columns={visibleColumns(settings)} />
       </Suspense>

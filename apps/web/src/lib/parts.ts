@@ -81,13 +81,33 @@ export function imageUrl(image: { storageKey: string | null; sourceUrl: string |
 
 const inStock = () => inArray(parts.status, ["in_stock", "reserved"]);
 
-function statusAndPriceFilter({ statuses, priceMin, priceMax, noPrice }: PartsQuery) {
+function filtersFor({ statuses, priceMin, priceMax, noPrice, brand }: PartsQuery) {
+  const brandCarIds = sql`(
+    select ${rrrCars.id} from ${rrrCars}
+    join ${rrrCarModels} on ${rrrCarModels.id} = ${rrrCars.modelId}
+    where ${rrrCarModels.brand} = ${brand}
+  )`;
+
   return and(
     statuses.length > 0 ? inArray(parts.status, statuses) : undefined,
     priceMin !== null ? gte(parts.price, String(priceMin)) : undefined,
     priceMax !== null ? lte(parts.price, String(priceMax)) : undefined,
     noPrice ? or(isNull(parts.price), eq(parts.price, "0")) : undefined,
+    brand ? sql`${parts.rrrCarId} in ${brandCarIds}` : undefined,
   );
+}
+
+// RRR's own shortcut list, shown above the alphabetical brands.
+const TOP_BRANDS = ["BMW", "Mercedes-Benz", "Audi", "Ford", "Renault", "Volvo", "Opel", "Volkswagen", "ZAZ"];
+
+/** Every brand in RRR's catalogue, not only ones in stock, in the order RRR lists them. */
+export async function listCarBrands() {
+  const rows = await getDb().selectDistinct({ brand: rrrCarModels.brand }).from(rrrCarModels);
+  const brands = rows.map((row) => row.brand).sort((a, b) => a.localeCompare(b, "en"));
+  return [
+    ...TOP_BRANDS.filter((brand) => brands.includes(brand)),
+    ...brands.filter((brand) => !TOP_BRANDS.includes(brand)),
+  ];
 }
 
 function similarFilter({ category, model }: Pick<PartsQuery, "category" | "model">) {
@@ -179,12 +199,7 @@ export async function listParts(query: PartsQuery) {
   const { q, page, pageSize, category, model } = query;
   const db = getDb();
   const { locale } = await getI18n();
-  const where = and(
-    isNull(parts.deletedAt),
-    statusAndPriceFilter(query),
-    searchFilter(q),
-    similarFilter({ category, model }),
-  );
+  const where = and(isNull(parts.deletedAt), filtersFor(query), searchFilter(q), similarFilter({ category, model }));
 
   // Must match the parts_listed_idx order, or Postgres sorts the whole table for every page.
   const newestFirst = [sql`${parts.listedAt} desc nulls last`, sql`${parts.id} desc nulls last`];
