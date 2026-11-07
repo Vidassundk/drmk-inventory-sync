@@ -35,3 +35,20 @@ export function CarsIcon({ className = "size-4" }: { className?: string }) {
     </svg>
   );
 }
+
+// A framed picture, shown where a photo is missing or hasn't loaded.
+export function PhotoIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      className={`${ICON} ${className}`}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="1.5" />
+      <circle cx="5.5" cy="6.25" r="1.25" />
+      <path d="m1.75 11.5 3.5-3.5 3 3 2-2 4 4" />
+    </svg>
+  );
+}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useI18n } from "@/components/i18n-provider";
+import { PhotoIcon } from "@/components/icons";
 
 export function PartGallery({ urls, alt }: { urls: string[]; alt: string }) {
   const { t } = useI18n();
@@ -13,10 +14,16 @@ export function PartGallery({ urls, alt }: { urls: string[]; alt: string }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="aspect-4/3 w-full overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900">
+      <div className="relative grid aspect-4/3 w-full place-items-center overflow-hidden rounded-lg bg-zinc-100 text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600">
+        <PhotoIcon className="size-16" />
         {main && !failed.has(main) && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={main} alt={alt} onError={() => markFailed(main)} className="h-full w-full object-contain" />
+          <img
+            src={main}
+            alt={alt}
+            onError={() => markFailed(main)}
+            className="absolute inset-0 h-full w-full object-contain"
+          />
         )}
       </div>
       {urls.length > 1 && (
@@ -28,8 +35,9 @@ export function PartGallery({ urls, alt }: { urls: string[]; alt: string }) {
                 onClick={() => setSelected(index)}
                 aria-label={t("gallery.photo", { number: index + 1 })}
                 aria-current={index === selected}
-                className="block h-16 w-20 overflow-hidden rounded bg-zinc-100 ring-accent aria-[current=true]:ring-2 dark:bg-zinc-900"
+                className="relative grid h-16 w-20 place-items-center overflow-hidden rounded bg-zinc-100 text-zinc-400 ring-accent aria-[current=true]:ring-2 dark:bg-zinc-900 dark:text-zinc-600"
               >
+                <PhotoIcon className="size-6" />
                 {!failed.has(url) && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -37,7 +45,7 @@ export function PartGallery({ urls, alt }: { urls: string[]; alt: string }) {
                     alt=""
                     loading="lazy"
                     onError={() => markFailed(url)}
-                    className="h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-cover"
                   />
                 )}
               </button>
