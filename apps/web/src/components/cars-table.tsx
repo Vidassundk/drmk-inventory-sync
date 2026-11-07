@@ -26,7 +26,7 @@ const COLUMNS: {
     label: "cars.car",
     cell: "min-w-40 max-w-56",
     render: (car) => (
-      <AppLink href={`/parts?car=${car.id}&status=all`} className="font-medium hover:underline">
+      <AppLink href={`/cars/${car.id}`} className="font-medium hover:underline">
         {car.brand} {car.model} {car.year && `(${car.year})`}
       </AppLink>
     ),

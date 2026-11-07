@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { and, count, desc, eq, gte, inArray, isNull, lte, parts, rrrCarModels, rrrCars, sql } from "@deremika/db";
 import type { CarsQuery } from "./cars-query";
 import { getDb } from "./db";
@@ -129,3 +130,61 @@ export async function carFilterOptions() {
   const brands = brandRows.map((row) => row.brand).sort((a, b) => a.localeCompare(b, "en"));
   return { fuels, gearboxes, wheelDrives, steerings, brands };
 }
+
+/** RRR leaves empty text fields as "" rather than null. */
+const rawText = (field: string) => sql<string | null>`nullif(trim(${rrrCars.raw}->>${field}), '')`;
+
+/** One car with everything RRR's car page shows that the API gives us, and what its parts are worth by status. */
+export const getCar = cache(async (id: number) => {
+  if (!Number.isSafeInteger(id) || id <= 0) return null;
+  const db = getDb();
+  const { locale } = await getI18n();
+  // Templates, write-offs and parts under audit aren't stock, so they stay out of the totals.
+  const counted = inArray(parts.status, ["in_stock", "reserved", "sold"]);
+
+  const [[car], [stats]] = await Promise.all([
+    db
+      .select({
+        ...carRowColumns(locale),
+        yearStart: rrrCarModels.yearStart,
+        yearEnd: rrrCarModels.yearEnd,
+        mileageKm: sql<number | null>`nullif(${rrrCars.raw}->>'car_mileage', '')::int`,
+        vin: rawText("car_body_number"),
+        engineCode: rawText("car_engine_code"),
+        gearboxCode: rawText("car_gearbox_code"),
+        colorCode: rawText("car_color_code"),
+        interior: rawText("car_interior"),
+        defects: rawText("defectation_notes"),
+        // The watermarked 1024px copy for viewing, the small one for thumbnails.
+        photos: sql<{ url: string; thumb: string | null }[]>`coalesce((
+          select jsonb_agg(jsonb_build_object(
+            'url', coalesce(photo->>'marked', photo->>'original', photo->>'path'),
+            'thumb', photo->>'thumb'
+          ) order by (photo->>'main')::boolean desc nulls last, (photo->>'sort')::int nulls last)
+          from jsonb_array_elements(${rrrCars.raw}->'car_photo_gallery') photo
+        ), '[]'::jsonb)`,
+      })
+      .from(rrrCars)
+      .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
+      .where(eq(rrrCars.id, id))
+      .limit(1),
+    db
+      .select({
+        all: sql<number>`count(*) filter (where ${counted})::int`,
+        allValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${counted}), 0)::float`,
+        inStock: sql<number>`count(*) filter (where ${parts.status} = 'in_stock')::int`,
+        inStockValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'in_stock'), 0)::float`,
+        reserved: sql<number>`count(*) filter (where ${parts.status} = 'reserved')::int`,
+        reservedValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'reserved'), 0)::float`,
+        sold: sql<number>`count(*) filter (where ${parts.status} = 'sold')::int`,
+        soldValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'sold'), 0)::float`,
+        unpriced: sql<number>`count(*) filter (where ${parts.status} = 'in_stock' and coalesce(${parts.price}, 0) = 0)::int`,
+      })
+      .from(parts)
+      .where(and(eq(parts.rrrCarId, id), isNull(parts.deletedAt))),
+  ]);
+
+  return car ? { ...car, stats } : null;
+});
+
+export type CarDetail = NonNullable<Awaited<ReturnType<typeof getCar>>>;

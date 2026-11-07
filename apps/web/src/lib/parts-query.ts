@@ -160,6 +160,10 @@ export function parsePartsQuery(params: RawParams): PartsQuery {
 
 /** Builds a list URL, leaving out anything at its default to keep URLs short. */
 /** The list of parts counted by "Sandėlyje" for one category and car model. */
+/** A car's parts in the parts list, narrowed further by `changes` (a status, no price). */
+export const carPartsHref = (car: number, changes: Partial<PartsQuery> = {}) =>
+  partsHref(DEFAULTS, { car, ...changes });
+
 export const similarPartsHref = (category: number, model: number) => partsHref(DEFAULTS, { category, model });
 
 export function partsHref(query: PartsQuery, changes: Partial<PartsQuery> = {}) {

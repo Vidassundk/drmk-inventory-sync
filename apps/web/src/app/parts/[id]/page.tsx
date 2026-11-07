@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { AppLink } from "@/components/app-link";
 import { BackToList } from "@/components/back-to-list";
 import { PartGallery } from "@/components/part-gallery";
 import { SimilarParts } from "@/components/similar-parts";
@@ -63,9 +64,9 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
           <Field label={t("part.car")}>
             {part.rrrCarId && (
               <>
-                <span className="font-medium">
+                <AppLink href={`/cars/${part.rrrCarId}`} className="font-medium hover:underline">
                   {part.rrrCarId} {carTitle(part)}
-                </span>
+                </AppLink>
                 <br />
                 <span className="text-muted">{carDetails(part)}</span>
               </>

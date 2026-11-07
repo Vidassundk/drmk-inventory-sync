@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useI18n } from "@/components/i18n-provider";
 import { PhotoIcon } from "@/components/icons";
 
-export function PartGallery({ urls, alt }: { urls: string[]; alt: string }) {
+/** `thumbs` are smaller copies for the strip below, matched by position; without them the full photos are used. */
+export function PartGallery({ urls, thumbs = [], alt }: { urls: string[]; thumbs?: (string | null)[]; alt: string }) {
   const { t } = useI18n();
   const [selected, setSelected] = useState(0);
   const [failed, setFailed] = useState<ReadonlySet<string>>(new Set());
@@ -41,7 +42,7 @@ export function PartGallery({ urls, alt }: { urls: string[]; alt: string }) {
                 {!failed.has(url) && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={url}
+                    src={thumbs[index] ?? url}
                     alt=""
                     loading="lazy"
                     onError={() => markFailed(url)}
