@@ -3,6 +3,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import {
   and,
   count,
+  desc,
   eq,
   gte,
   images,
@@ -24,7 +25,7 @@ import {
 import { getDb } from "./db";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
-import { carTitle } from "./part-format";
+import { carOption, carTitle } from "./part-format";
 import type { PartsQuery } from "./parts-query";
 
 const MAX_SEARCH_TERMS = 5;
@@ -82,7 +83,7 @@ export function imageUrl(image: { storageKey: string | null; sourceUrl: string |
 
 const inStock = () => inArray(parts.status, ["in_stock", "reserved"]);
 
-function filtersFor({ statuses, priceMin, priceMax, noPrice, brand }: PartsQuery) {
+function filtersFor({ statuses, priceMin, priceMax, noPrice, brand, car }: PartsQuery) {
   const brandCarIds = sql`(
     select ${rrrCars.id} from ${rrrCars}
     join ${rrrCarModels} on ${rrrCarModels.id} = ${rrrCars.modelId}
@@ -95,6 +96,7 @@ function filtersFor({ statuses, priceMin, priceMax, noPrice, brand }: PartsQuery
     priceMax !== null ? lte(parts.price, String(priceMax)) : undefined,
     noPrice ? or(isNull(parts.price), eq(parts.price, "0")) : undefined,
     brand ? sql`${parts.rrrCarId} in ${brandCarIds}` : undefined,
+    car ? eq(parts.rrrCarId, car) : undefined,
   );
 }
 
@@ -148,6 +150,70 @@ export async function searchCarModels(q: string, brand: string | null, limit: nu
     .offset(offset);
 
   return rows.map((row) => ({ id: row.id, label: carTitle(row)! }));
+}
+
+const carOptionColumns = (locale: Locale) => ({
+  id: rrrCars.id,
+  carBrand: rrrCarModels.brand,
+  carModel: rrrCarModels.name,
+  carYearStart: rrrCarModels.yearStart,
+  carYearEnd: rrrCarModels.yearEnd,
+  carYear: rrrCars.year,
+  carBodyType: carLabel(locale, "bodyType", rrrCars.bodyType),
+  carFuel: carLabel(locale, "fuel", rrrCars.fuel),
+  carPowerKw: rrrCars.powerKw,
+  carEngineCc: rrrCars.engineCc,
+  carColor: carLabel(locale, "color", rrrCars.color),
+  carWheelDrive: carLabel(locale, "wheelDrive", rrrCars.wheelDrive),
+  carSteering: carLabel(locale, "steering", rrrCars.steering),
+  carGearbox: carLabel(locale, "gearbox", rrrCars.gearbox),
+});
+
+/**
+ * One page of our own donor cars, newest first like RRR. Unlike brands and models this isn't a shared
+ * catalogue, so a new car appears here as soon as it syncs. Narrows to the chosen brand or model, if any.
+ */
+export async function searchCars(
+  q: string,
+  { brand, model }: { brand: string | null; model: number | null },
+  limit: number,
+  offset: number,
+) {
+  const { locale } = await getI18n();
+  const columns = carOptionColumns(locale);
+  const text = sql`lower(concat_ws(' ', ${rrrCars.id}, ${columns.carBrand}, ${columns.carModel}, ${rrrCars.year},
+    ${columns.carBodyType}, ${columns.carFuel}, ${columns.carColor}, ${columns.carWheelDrive},
+    ${columns.carSteering}, ${columns.carGearbox}))`;
+  const terms = q.toLowerCase().replaceAll("#", " ").split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_TERMS);
+
+  const rows = await getDb()
+    .select(columns)
+    .from(rrrCars)
+    .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
+    .where(
+      and(
+        brand ? eq(rrrCarModels.brand, brand) : undefined,
+        model ? eq(rrrCars.modelId, model) : undefined,
+        ...terms.map((term) => sql`${text} like ${`%${term.replace(/[\\%_]/g, "\\$&")}%`}`),
+      ),
+    )
+    .orderBy(desc(rrrCars.id))
+    .limit(limit)
+    .offset(offset);
+
+  return rows.map((row) => ({ id: row.id, label: carOption(row) }));
+}
+
+/** The chosen car's name, for the filter chip. */
+export async function carLabelFor(car: number | null) {
+  if (!car) return null;
+  const { locale } = await getI18n();
+  const [row] = await getDb()
+    .select(carOptionColumns(locale))
+    .from(rrrCars)
+    .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
+    .where(eq(rrrCars.id, car));
+  return row ? carOption(row) : null;
 }
 
 /** The chosen model's name, for the filter chip. */

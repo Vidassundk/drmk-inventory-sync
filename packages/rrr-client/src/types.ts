@@ -103,6 +103,8 @@ export type RrrCar = {
   car_engine_cubic_capacity: string;
   car_color: string;
   car_wheel_drive: string;
+  car_wheel_type: string;
+  car_gearbox_type: string;
   [field: string]: unknown;
 };
 
@@ -113,6 +115,6 @@ export type RrrNames = { lt?: string; en?: string; ru?: string };
 export type RrrCategory = RrrNames & { id: string; parent_id: string; level: string };
 
 /** Code tables that translate RRR's numeric codes into names. */
-export type RrrLookup = "fuel" | "color" | "wheel_drive" | "car_body_type";
+export type RrrLookup = "fuel" | "color" | "wheel_drive" | "car_body_type" | "wheel" | "gearbox_type";
 
 export type GetCarsResult = { cars: RrrCar[]; pagination: RrrPagination };

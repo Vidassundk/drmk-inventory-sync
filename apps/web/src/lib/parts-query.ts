@@ -3,8 +3,8 @@
 
 export const PAGE_SIZES = [30, 50, 100] as const;
 
-/** How many models the filter loads at a time as it scrolls. */
-export const MODELS_PAGE_SIZE = 50;
+/** How many options the model and car filters load at a time as they scroll. */
+export const OPTIONS_PAGE_SIZE = 50;
 
 export const PART_STATUSES = [
   "in_stock",
@@ -29,6 +29,7 @@ export type PartsQuery = {
   priceMax: number | null;
   noPrice: boolean;
   brand: string | null;
+  car: number | null;
   /** Set together to list the parts of one kind for one car model, which is what "Sandėlyje" counts. */
   category: number | null;
   model: number | null;
@@ -43,6 +44,7 @@ const DEFAULTS: PartsQuery = {
   priceMax: null,
   noPrice: false,
   brand: null,
+  car: null,
   category: null,
   model: null,
 };
@@ -79,6 +81,7 @@ export const hasFilters = (query: PartsQuery) =>
   hasPriceRange(query) ||
   query.noPrice ||
   query.brand !== null ||
+  query.car !== null ||
   query.category !== null ||
   query.model !== null;
 
@@ -124,6 +127,7 @@ export function parsePartsQuery(params: RawParams): PartsQuery {
     priceMax: noPrice ? null : priceParam(params.priceMax),
     noPrice,
     brand: first(params.brand)?.trim().slice(0, 60) || DEFAULTS.brand,
+    car: idParam(params.car),
     category: idParam(params.category),
     model: idParam(params.model),
   };
@@ -141,6 +145,7 @@ export function partsHref(query: PartsQuery, changes: Partial<PartsQuery> = {}) 
   if (next.priceMax !== null) params.set("priceMax", String(next.priceMax));
   if (next.noPrice) params.set("noPrice", "1");
   if (next.brand) params.set("brand", next.brand);
+  if (next.car) params.set("car", String(next.car));
   if (next.q) params.set("q", next.q);
   if (next.page !== DEFAULTS.page) params.set("page", String(next.page));
   if (next.pageSize !== DEFAULTS.pageSize) params.set("pageSize", String(next.pageSize));

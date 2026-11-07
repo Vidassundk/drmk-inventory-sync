@@ -12,26 +12,28 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n-provider";
+import { Spinner } from "@/components/spinner";
 import { statusLabel } from "@/lib/part-format";
 import {
   clearedFiltersHref,
   hasFilters,
-  MODELS_PAGE_SIZE,
+  OPTIONS_PAGE_SIZE,
   PART_STATUSES,
   partsHref,
   type PartsQuery,
   type PartStatus,
 } from "@/lib/parts-query";
 
-type Filter = "status" | "price" | "brand" | "model";
+type Filter = "status" | "price" | "brand" | "model" | "car";
 type Apply = (changes: Partial<PartsQuery>) => void;
 
-const FILTERS: Filter[] = ["status", "price", "brand", "model"];
+const FILTERS: Filter[] = ["status", "price", "brand", "model", "car"];
 const FILTER_LABELS = {
   status: "columns.status",
   price: "columns.price",
   brand: "filters.brand",
   model: "filters.model",
+  car: "filters.car",
 } as const;
 const SEARCH_DELAY_MS = 200;
 const LOAD_MORE_DISTANCE_PX = 200;
@@ -162,8 +164,8 @@ function BrandPanel({ query, brands, apply }: { query: PartsQuery; brands: strin
     // Typing then pressing Enter means the top match, unless a brand that's still listed was clicked.
     const clicked = selected && shown.includes(selected) ? selected : null;
     const brand = clicked ?? (term ? (shown[0] ?? null) : selected);
-    // A model from another brand would match nothing, so changing brand clears it.
-    apply(brand === query.brand ? { brand } : { brand, model: null });
+    // A model or car from another brand would match nothing, so changing brand clears them.
+    apply(brand === query.brand ? { brand } : { brand, model: null, car: null });
   }
 
   return (
@@ -199,16 +201,32 @@ function BrandPanel({ query, brands, apply }: { query: PartsQuery; brands: strin
   );
 }
 
-type ModelOption = { id: number; label: string };
+type RemoteOption = { id: number; label: string };
 
-function ModelPanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
+type RemotePanelProps = {
+  /** The endpoint to load options from, which takes `q` and `offset` on top of these params. */
+  url: string;
+  params: Record<string, string>;
+  label: string;
+  initial: number | null;
+  onApply: (id: number | null) => void;
+  onClear: () => void;
+};
+
+/** A searchable list too long to send with the page, so it loads a page at a time as it scrolls. */
+function RemoteOptionsPanel({ url, params, label, initial, onApply, onClear }: RemotePanelProps) {
   const { t } = useI18n();
   const [search, setSearch] = useState("");
-  const [options, setOptions] = useState<ModelOption[] | null>(null);
+  const [options, setOptions] = useState<RemoteOption[] | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [selected, setSelected] = useState(query.model);
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const [selected, setSelected] = useState(initial);
   const request = useRef<AbortController>(undefined);
+  const paramsKey = new URLSearchParams(params).toString();
+  // Which search the list shows, so anything else means a new one is on its way.
+  const searchKey = `${paramsKey}|${search.trim()}`;
+  const searching = loadedFor !== searchKey;
 
   const load = useCallback(
     async (offset: number) => {
@@ -216,19 +234,21 @@ function ModelPanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
       request.current?.abort();
       const controller = new AbortController();
       request.current = controller;
-      const params = new URLSearchParams({ q: search.trim(), offset: String(offset) });
-      if (query.brand) params.set("brand", query.brand);
+      const query = new URLSearchParams(paramsKey);
+      query.set("q", search.trim());
+      query.set("offset", String(offset));
       try {
-        const response = await fetch(`/api/car-models?${params}`, { signal: controller.signal });
-        const page: ModelOption[] = await response.json();
+        const response = await fetch(`${url}?${query}`, { signal: controller.signal });
+        const page: RemoteOption[] = await response.json();
         setOptions((current) => (offset === 0 ? page : [...(current ?? []), ...page]));
-        setHasMore(page.length === MODELS_PAGE_SIZE);
+        setHasMore(page.length === OPTIONS_PAGE_SIZE);
         setLoadingMore(false);
+        setLoadedFor(searchKey);
       } catch (error) {
         if (!controller.signal.aborted) throw error;
       }
     },
-    [search, query.brand],
+    [url, paramsKey, search, searchKey],
   );
 
   useEffect(() => {
@@ -241,15 +261,16 @@ function ModelPanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
 
   function loadMoreNearBottom(event: UIEvent<HTMLUListElement>) {
     const { scrollTop, clientHeight, scrollHeight } = event.currentTarget;
-    if (!hasMore || loadingMore || scrollHeight - scrollTop - clientHeight > LOAD_MORE_DISTANCE_PX) return;
+    if (!hasMore || loadingMore || searching || scrollHeight - scrollTop - clientHeight > LOAD_MORE_DISTANCE_PX) return;
     setLoadingMore(true);
     load(options?.length ?? 0);
   }
 
   function submit(event: FormEvent) {
     event.preventDefault();
+    // Typing then pressing Enter means the top match, unless an option that's still listed was clicked.
     const listed = options?.some((option) => option.id === selected);
-    apply({ model: listed || !search.trim() ? selected : (options?.[0]?.id ?? null), category: null });
+    onApply(listed || !search.trim() ? selected : (options?.[0]?.id ?? null));
   }
 
   return (
@@ -261,27 +282,34 @@ function ModelPanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder={t("filters.chooseOption")}
-          aria-label={t("filters.model")}
+          aria-label={label}
           className="h-9 w-full rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-accent dark:border-zinc-700"
         />
       </div>
       <ul onScroll={loadMoreNearBottom} className="max-h-80 min-h-10 overflow-y-auto">
-        {options?.map((option) => (
-          <li key={option.id}>
-            <button
-              type="button"
-              onClick={() => setSelected(option.id)}
-              aria-pressed={option.id === selected}
-              className="w-full px-3 py-1.5 text-left text-sm hover:bg-zinc-100 aria-pressed:bg-zinc-100 aria-pressed:font-medium aria-pressed:text-accent-text dark:hover:bg-zinc-900 dark:aria-pressed:bg-zinc-900"
-            >
-              {option.label}
-            </button>
+        {!searching &&
+          options?.map((option) => (
+            <li key={option.id}>
+              <button
+                type="button"
+                onClick={() => setSelected(option.id)}
+                aria-pressed={option.id === selected}
+                className="w-full px-3 py-1.5 text-left text-sm hover:bg-zinc-100 aria-pressed:bg-zinc-100 aria-pressed:font-medium aria-pressed:text-accent-text dark:hover:bg-zinc-900 dark:aria-pressed:bg-zinc-900"
+              >
+                {option.label}
+              </button>
+            </li>
+          ))}
+        {!searching && options?.length === 0 && (
+          <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.noOptions")}</li>
+        )}
+        {(searching || loadingMore) && (
+          <li role="status" aria-label={t("filters.loading")} className="grid place-items-center py-3">
+            <Spinner className="size-5" />
           </li>
-        ))}
-        {options?.length === 0 && <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.noOptions")}</li>}
-        {loadingMore && <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.loading")}</li>}
+        )}
       </ul>
-      <PanelFooter onClear={() => apply({ model: null, category: null })} />
+      <PanelFooter onClear={onClear} />
     </form>
   );
 }
@@ -378,9 +406,9 @@ function priceSummary({ priceMin, priceMax, noPrice }: PartsQuery, noPriceLabel:
   return undefined;
 }
 
-type FiltersProps = { query: PartsQuery; brands: string[]; modelLabel: string | null };
+type FiltersProps = { query: PartsQuery; brands: string[]; modelLabel: string | null; carLabel: string | null };
 
-export function PartsFilters({ query, brands, modelLabel }: FiltersProps) {
+export function PartsFilters({ query, brands, modelLabel, carLabel }: FiltersProps) {
   const i18n = useI18n();
   const { t } = i18n;
   const router = useRouter();
@@ -419,6 +447,8 @@ export function PartsFilters({ query, brands, modelLabel }: FiltersProps) {
   const showBrand = query.brand !== null || open === "brand";
   // With a category too, this came from a "Sandėlyje" link, which has its own label above the table.
   const showModel = (query.model !== null && query.category === null) || open === "model";
+  const showCar = query.car !== null || open === "car";
+  const brandParam: Record<string, string> = query.brand ? { brand: query.brand } : {};
 
   return (
     <div ref={root} className="relative flex flex-wrap items-center gap-2">
@@ -463,7 +493,32 @@ export function PartsFilters({ query, brands, modelLabel }: FiltersProps) {
           onToggle={() => toggle("model")}
           onRemove={() => apply({ model: null })}
         >
-          <ModelPanel query={query} apply={apply} />
+          <RemoteOptionsPanel
+            url="/api/car-models"
+            params={brandParam}
+            label={t("filters.model")}
+            initial={query.model}
+            onApply={(model) => apply({ model, category: null, car: null })}
+            onClear={() => apply({ model: null, category: null })}
+          />
+        </FilterChip>
+      )}
+      {showCar && (
+        <FilterChip
+          label={t("filters.car")}
+          value={carLabel ?? undefined}
+          open={open === "car"}
+          onToggle={() => toggle("car")}
+          onRemove={() => apply({ car: null })}
+        >
+          <RemoteOptionsPanel
+            url="/api/cars"
+            params={{ ...brandParam, ...(query.model ? { model: String(query.model) } : {}) }}
+            label={t("filters.car")}
+            initial={query.car}
+            onApply={(car) => apply({ car })}
+            onClear={() => apply({ car: null })}
+          />
         </FilterChip>
       )}
       <div className="md:relative">

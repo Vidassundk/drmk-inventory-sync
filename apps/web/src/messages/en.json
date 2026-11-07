@@ -22,6 +22,7 @@
   "filters.max": "Max",
   "filters.brand": "Manufacturer",
   "filters.model": "Model",
+  "filters.car": "Car",
   "filters.chooseOption": "Choose an option",
   "filters.noOptions": "Nothing found",
   "filters.loading": "Loading...",

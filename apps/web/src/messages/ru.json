@@ -22,6 +22,7 @@
   "filters.max": "Макс",
   "filters.brand": "Производитель",
   "filters.model": "Модель",
+  "filters.car": "Автомобиль",
   "filters.chooseOption": "Выберите вариант",
   "filters.noOptions": "Ничего не найдено",
   "filters.loading": "Загрузка...",

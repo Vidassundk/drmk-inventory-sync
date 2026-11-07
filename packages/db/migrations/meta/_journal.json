@@ -64,6 +64,13 @@
       "when": 1793994092416,
       "tag": "0008_catalog_translations",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794035841437,
+      "tag": "0009_car_steering_gearbox",
+      "breakpoints": true
     }
   ]
 }

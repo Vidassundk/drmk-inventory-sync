@@ -101,7 +101,7 @@ export const rrrCarModels = pgTable("rrr_car_models", {
 
 /**
  * Donor cars from RRR, with its codes already translated to names. The columns hold Lithuanian, and `translations`
- * holds the same four fields for other languages: { en: { bodyType, ... }, ru: { ... } }. Parts link by parts.rrr_car_id.
+ * holds the same six fields for other languages: { en: { bodyType, ... }, ru: { ... } }. Parts link by parts.rrr_car_id.
  */
 export const rrrCars = pgTable("rrr_cars", {
   id: integer("id").primaryKey(),
@@ -113,6 +113,8 @@ export const rrrCars = pgTable("rrr_cars", {
   engineCc: integer("engine_cc"),
   color: text("color"),
   wheelDrive: text("wheel_drive"),
+  steering: text("steering"),
+  gearbox: text("gearbox"),
   translations: jsonb("translations"),
   raw: jsonb("raw").notNull(),
   updatedAt: updatedAt(),

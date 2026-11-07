@@ -21,12 +21,14 @@ const label = (labels: Record<string, RrrNames>, code: string, language: Languag
   return name && !/^-+$/.test(name) ? name : null;
 };
 
-/** The car's four coded fields in one language. */
+/** The car's coded fields in one language. */
 const carLabels = (car: RrrCar, labels: Labels, language: Language) => ({
   bodyType: label(labels.car_body_type, car.car_body_type, language),
   fuel: label(labels.fuel, car.car_fuel, language),
   color: label(labels.color, car.car_color, language),
   wheelDrive: label(labels.wheel_drive, car.car_wheel_drive, language),
+  steering: label(labels.wheel, car.car_wheel_type, language),
+  gearbox: label(labels.gearbox_type, car.car_gearbox_type, language),
 });
 
 async function syncModels(db: Db, rrr: RrrClient) {
@@ -133,6 +135,8 @@ async function upsertCars(db: Db, cars: RrrCar[], labels: Labels) {
         engineCc: sql`excluded.engine_cc`,
         color: sql`excluded.color`,
         wheelDrive: sql`excluded.wheel_drive`,
+        steering: sql`excluded.steering`,
+        gearbox: sql`excluded.gearbox`,
         translations: sql`excluded.translations`,
         raw: sql`excluded.raw`,
         updatedAt: new Date(),
@@ -150,12 +154,9 @@ export function syncRrrCars(db: Db, rrr: RrrClient, { all = false } = {}) {
     const models = all ? await syncModels(db, rrr) : 0;
     const categories = all ? await syncCategories(db, rrr) : 0;
 
-    const [fuel, color, wheel_drive, car_body_type] = await Promise.all(
-      (["fuel", "color", "wheel_drive", "car_body_type"] as const).map((name) =>
-        withRetry(() => rrr.getLookup(name), `lookup ${name}`),
-      ),
-    );
-    const labels = { fuel, color, wheel_drive, car_body_type };
+    const lookups: RrrLookup[] = ["fuel", "color", "wheel_drive", "car_body_type", "wheel", "gearbox_type"];
+    const tables = await Promise.all(lookups.map((name) => withRetry(() => rrr.getLookup(name), `lookup ${name}`)));
+    const labels = Object.fromEntries(lookups.map((name, index) => [name, tables[index]])) as Labels;
 
     let cars = 0;
     if (all) {

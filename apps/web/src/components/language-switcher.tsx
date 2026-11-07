@@ -3,6 +3,7 @@
 import { addTransitionType, useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n-provider";
+import { Spinner } from "@/components/spinner";
 import { LOCALE_COOKIE, LOCALES, type Locale } from "@/lib/i18n";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
@@ -55,7 +56,7 @@ export function LanguageSwitcher() {
           aria-label={t("language.changing")}
           className="pointer-events-none fixed inset-0 z-50 grid place-items-center"
         >
-          <span className="size-8 animate-spin rounded-full border-2 border-zinc-300 border-t-accent dark:border-zinc-700 dark:border-t-accent" />
+          <Spinner className="size-8" />
         </div>
       )}
     </>

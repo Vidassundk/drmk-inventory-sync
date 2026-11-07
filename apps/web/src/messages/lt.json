@@ -22,6 +22,7 @@
   "filters.max": "Max",
   "filters.brand": "Gamintojas",
   "filters.model": "Modelis",
+  "filters.car": "Automobilis",
   "filters.chooseOption": "Pasirinkite parinktį",
   "filters.noOptions": "Nieko nerasta",
   "filters.loading": "Kraunama...",

@@ -39,6 +39,29 @@ export function carTitle({ carBrand, carModel, carYearStart, carYearEnd }: CarTi
   return `${carBrand} ${carModel}${years}`;
 }
 
+type CarOption = CarTitle &
+  CarDetails & {
+    id: number;
+    carSteering: string | null;
+    carGearbox: string | null;
+  };
+
+/** RRR's label for one donor car: "#826: BMW 3 E46 (2002, Kupė (Coupe), Dyzelinas, 85kW, 1995cm³, ...)". */
+export function carOption(car: CarOption) {
+  const details = [
+    car.carYear,
+    car.carBodyType,
+    car.carFuel,
+    car.carPowerKw && `${car.carPowerKw}kW`,
+    car.carEngineCc && `${car.carEngineCc}cm³`,
+    car.carColor,
+    car.carWheelDrive,
+    car.carSteering,
+    car.carGearbox,
+  ].filter(Boolean);
+  return `#${car.id}: ${car.carBrand ?? ""} ${car.carModel ?? ""} (${details.join(", ")})`;
+}
+
 type CarDetails = {
   carYear: number | null;
   carBodyType: string | null;
