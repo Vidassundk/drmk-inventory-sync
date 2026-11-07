@@ -17,8 +17,11 @@ import {
   rrrCars,
   rrrCategories,
   sql,
+  type SQLWrapper,
 } from "@deremika/db";
 import { getDb } from "./db";
+import type { Locale } from "./i18n";
+import { getI18n } from "./i18n-server";
 import type { PartsQuery, PartTab } from "./parts-query";
 
 const MAX_SEARCH_TERMS = 5;
@@ -32,7 +35,26 @@ const rawColumns = {
   reservedAt: sql<string | null>`${partListings.raw}->>'reserved_date'`,
 };
 
-const carColumns = {
+/** A value in the viewer's language, falling back to Lithuanian if it has no translation. */
+const inLanguage = (locale: Locale, values: Record<Locale, SQLWrapper>) =>
+  sql<string | null>`coalesce(${values[locale]}, ${values.lt})`;
+
+const categoryName = (locale: Locale) =>
+  inLanguage(locale, { lt: rrrCategories.name, en: rrrCategories.nameEn, ru: rrrCategories.nameRu });
+
+const categoryPath = (locale: Locale) =>
+  inLanguage(locale, { lt: rrrCategories.path, en: rrrCategories.pathEn, ru: rrrCategories.pathRu });
+
+/** Part names come from their category, so they translate with it. A name someone typed by hand stays as written. */
+const partName = (locale: Locale) =>
+  sql<string>`case when ${parts.name} = ${rrrCategories.name} then ${categoryName(locale)} else ${parts.name} end`;
+
+const carLabel = (locale: Locale, field: string, lithuanian: SQLWrapper) =>
+  sql<
+    string | null
+  >`coalesce(${rrrCars.translations}->${sql.raw(`'${locale}'`)}->>${sql.raw(`'${field}'`)}, ${lithuanian})`;
+
+const carColumns = (locale: Locale) => ({
   rrrCarId: parts.rrrCarId,
   categoryId: parts.rrrCategoryId,
   carModelId: rrrCars.modelId,
@@ -41,13 +63,13 @@ const carColumns = {
   carYearStart: rrrCarModels.yearStart,
   carYearEnd: rrrCarModels.yearEnd,
   carYear: rrrCars.year,
-  carBodyType: rrrCars.bodyType,
-  carFuel: rrrCars.fuel,
+  carBodyType: carLabel(locale, "bodyType", rrrCars.bodyType),
+  carFuel: carLabel(locale, "fuel", rrrCars.fuel),
   carPowerKw: rrrCars.powerKw,
   carEngineCc: rrrCars.engineCc,
-  carColor: rrrCars.color,
-  carWheelDrive: rrrCars.wheelDrive,
-};
+  carColor: carLabel(locale, "color", rrrCars.color),
+  carWheelDrive: carLabel(locale, "wheelDrive", rrrCars.wheelDrive),
+});
 
 /** Our R2 copy if the photo has been rehosted, otherwise the original on Ovoko. */
 export function imageUrl(image: { storageKey: string | null; sourceUrl: string | null }) {
@@ -122,7 +144,7 @@ async function stockFor(groups: StockGroup[]) {
   return new Map(stats.map(({ count, averagePrice, ...group }) => [groupKey(group)!, { count, averagePrice }]));
 }
 
-/** One search word: found in the part's name or codes, or in its car's brand and model. */
+/** One search word: found in the part's name or codes, its category in any language, or its car's brand and model. */
 function termFilter(term: string) {
   const pattern = `%${term.replace(/[\\%_]/g, "\\$&")}%`;
   const carIds = sql`(
@@ -130,7 +152,16 @@ function termFilter(term: string) {
     join ${rrrCarModels} on ${rrrCarModels.id} = ${rrrCars.modelId}
     where lower(${rrrCarModels.brand} || ' ' || ${rrrCarModels.name}) like ${pattern}
   )`;
-  return or(sql`${partSearchText(parts)} like ${pattern}`, sql`${parts.rrrCarId} in ${carIds}`);
+  // All three languages match whichever one the site is showing, because people search in what they know.
+  const categoryIds = sql`(
+    select ${rrrCategories.id} from ${rrrCategories}
+    where lower(concat_ws(' ', ${rrrCategories.name}, ${rrrCategories.nameEn}, ${rrrCategories.nameRu})) like ${pattern}
+  )`;
+  return or(
+    sql`${partSearchText(parts)} like ${pattern}`,
+    sql`${parts.rrrCarId} in ${carIds}`,
+    sql`${parts.rrrCategoryId} in ${categoryIds}`,
+  );
 }
 
 /** Every word must match, so "volvo v50 blokas" works. A whole-number search also matches the RRR ID. */
@@ -150,6 +181,7 @@ function searchFilter(q: string) {
 
 export async function listParts({ tab, q, page, pageSize, category, model }: PartsQuery) {
   const db = getDb();
+  const { locale } = await getI18n();
   const where = and(isNull(parts.deletedAt), tabFilter(tab), searchFilter(q), similarFilter({ category, model }));
 
   // Must match the parts_listed_idx order, or Postgres sorts the whole table for every page.
@@ -173,7 +205,7 @@ export async function listParts({ tab, q, page, pageSize, category, model }: Par
       .select({
         id: parts.id,
         rrrId: partListings.externalId,
-        name: parts.name,
+        name: partName(locale),
         manufacturerCode: parts.manufacturerCode,
         visibleCode: parts.visibleCode,
         otherCode: parts.otherCode,
@@ -181,10 +213,10 @@ export async function listParts({ tab, q, page, pageSize, category, model }: Par
         currency: parts.currency,
         status: parts.status,
         quality: parts.quality,
-        category: rrrCategories.name,
+        category: categoryName(locale),
         notes: parts.notes,
         ...rawColumns,
-        ...carColumns,
+        ...carColumns(locale),
         listedAt: parts.listedAt,
         storageKey: images.storageKey,
         sourceUrl: images.sourceUrl,
@@ -218,8 +250,14 @@ export async function listParts({ tab, q, page, pageSize, category, model }: Par
 export async function similarFilterLabel({ category, model }: Pick<PartsQuery, "category" | "model">) {
   if (!category && !model) return null;
   const db = getDb();
+  const { locale } = await getI18n();
   const [[categoryRow], [modelRow]] = await Promise.all([
-    category ? db.select({ name: rrrCategories.name }).from(rrrCategories).where(eq(rrrCategories.id, category)) : [],
+    category
+      ? db
+          .select({ name: categoryName(locale) })
+          .from(rrrCategories)
+          .where(eq(rrrCategories.id, category))
+      : [],
     model
       ? db
           .select({ brand: rrrCarModels.brand, name: rrrCarModels.name })
@@ -236,6 +274,7 @@ export async function listSimilarParts(part: StockGroup & { id: string }, limit:
   if (!categoryId || !carModelId) return { rows: [], total: 0 };
 
   const db = getDb();
+  const { locale } = await getI18n();
   const where = and(
     inStock(),
     isNull(parts.deletedAt),
@@ -248,7 +287,7 @@ export async function listSimilarParts(part: StockGroup & { id: string }, limit:
       .select({
         id: parts.id,
         rrrId: partListings.externalId,
-        name: parts.name,
+        name: partName(locale),
         price: parts.price,
         currency: parts.currency,
         status: parts.status,
@@ -262,6 +301,7 @@ export async function listSimilarParts(part: StockGroup & { id: string }, limit:
       .leftJoin(partImages, and(eq(partImages.partId, parts.id), eq(partImages.position, 0)))
       .leftJoin(images, eq(images.id, partImages.imageId))
       .leftJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
+      .leftJoin(rrrCategories, eq(rrrCategories.id, parts.rrrCategoryId))
       .where(where)
       .orderBy(sql`${parts.listedAt} desc nulls last`, sql`${parts.id} desc nulls last`)
       .limit(limit),
@@ -283,6 +323,7 @@ export type PartRow = Awaited<ReturnType<typeof listParts>>["rows"][number];
 export const getPart = cache(async (id: string) => {
   if (!UUID.test(id)) return null;
   const db = getDb();
+  const { locale } = await getI18n();
 
   const [[part], photos] = await Promise.all([
     db
@@ -290,7 +331,7 @@ export const getPart = cache(async (id: string) => {
         id: parts.id,
         rrrId: partListings.externalId,
         rrrUrl: sql<string | null>`${partListings.raw}->>'shop_url'`,
-        name: parts.name,
+        name: partName(locale),
         manufacturerCode: parts.manufacturerCode,
         visibleCode: parts.visibleCode,
         otherCode: parts.otherCode,
@@ -301,9 +342,9 @@ export const getPart = cache(async (id: string) => {
         status: parts.status,
         listedAt: parts.listedAt,
         deletedAt: parts.deletedAt,
-        categoryPath: rrrCategories.path,
+        categoryPath: categoryPath(locale),
         ...rawColumns,
-        ...carColumns,
+        ...carColumns(locale),
       })
       .from(parts)
       .leftJoin(partListings, and(eq(partListings.partId, parts.id), eq(partListings.channelId, "rrr")))

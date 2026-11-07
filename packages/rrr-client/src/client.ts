@@ -8,6 +8,7 @@ import type {
   RrrCategory,
   RrrCredentials,
   RrrLookup,
+  RrrNames,
   RrrPagination,
   RrrPart,
 } from "./types.ts";
@@ -123,11 +124,10 @@ export class RrrClient {
     return readList<RrrCategory>(await this.post("get/categories", new URLSearchParams()));
   }
 
-  /** A code table as code -> Lithuanian name. */
+  /** A code table as code -> its names in each language. */
   async getLookup(name: RrrLookup) {
     const body = await this.post(`get/${name}`, new URLSearchParams());
-    const list = (body.list ?? {}) as Record<string, { lt?: string; en?: string }>;
-    return Object.fromEntries(Object.entries(list).map(([code, names]) => [code, names.lt ?? names.en ?? ""]));
+    return (body.list ?? {}) as Record<string, RrrNames>;
   }
 
   private async post(path: string, query: URLSearchParams): Promise<Record<string, unknown>> {

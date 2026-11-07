@@ -99,7 +99,10 @@ export const rrrCarModels = pgTable("rrr_car_models", {
   updatedAt: updatedAt(),
 }).enableRLS();
 
-/** Donor cars from RRR, with its codes already translated to Lithuanian names. Parts link by parts.rrr_car_id. */
+/**
+ * Donor cars from RRR, with its codes already translated to names. The columns hold Lithuanian, and `translations`
+ * holds the same four fields for other languages: { en: { bodyType, ... }, ru: { ... } }. Parts link by parts.rrr_car_id.
+ */
 export const rrrCars = pgTable("rrr_cars", {
   id: integer("id").primaryKey(),
   modelId: integer("model_id"),
@@ -110,16 +113,25 @@ export const rrrCars = pgTable("rrr_cars", {
   engineCc: integer("engine_cc"),
   color: text("color"),
   wheelDrive: text("wheel_drive"),
+  translations: jsonb("translations"),
   raw: jsonb("raw").notNull(),
   updatedAt: updatedAt(),
 }).enableRLS();
 
-/** RRR's part category tree in Lithuanian. `path` is the full trail, ready to display. Parts link by parts.rrr_category_id. */
+/**
+ * RRR's part category tree. `name` and `path` are Lithuanian, with English and Russian alongside; `path` is the full
+ * trail, ready to display. Part names come from here, so translating this table translates every part. Parts link
+ * by parts.rrr_category_id.
+ */
 export const rrrCategories = pgTable("rrr_categories", {
   id: integer("id").primaryKey(),
   parentId: integer("parent_id"),
   name: text("name").notNull(),
+  nameEn: text("name_en"),
+  nameRu: text("name_ru"),
   path: text("path").notNull(),
+  pathEn: text("path_en"),
+  pathRu: text("path_ru"),
   updatedAt: updatedAt(),
 }).enableRLS();
 

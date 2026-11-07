@@ -109,7 +109,8 @@ export type RrrCar = {
 export type RrrCarBrand = { id: string; name: string };
 export type RrrCarModel = { id: string; brand: string; name: string; year_start: string; year_end: string };
 
-export type RrrCategory = { id: string; parent_id: string; level: string; lt?: string; en?: string };
+export type RrrNames = { lt?: string; en?: string; ru?: string };
+export type RrrCategory = RrrNames & { id: string; parent_id: string; level: string };
 
 /** Code tables that translate RRR's numeric codes into names. */
 export type RrrLookup = "fuel" | "color" | "wheel_drive" | "car_body_type";

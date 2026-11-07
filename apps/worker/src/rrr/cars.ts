@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { rrrCarModels, rrrCars, rrrCategories, type Db } from "@deremika/db";
-import type { RrrCar, RrrCategory, RrrClient, RrrLookup } from "@deremika/rrr-client";
+import type { RrrCar, RrrCategory, RrrClient, RrrLookup, RrrNames } from "@deremika/rrr-client";
 import { exclusive } from "../lock.ts";
 import { withRetry } from "./sync.ts";
 
@@ -12,11 +12,22 @@ const int = (v: string | null | undefined) => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
+type Language = keyof RrrNames;
+type Labels = Record<RrrLookup, Record<string, RrrNames>>;
+
 // RRR's "nothing selected" entries are empty or dashes.
-const label = (labels: Record<string, string>, code: string) => {
-  const name = labels[code]?.trim();
+const label = (labels: Record<string, RrrNames>, code: string, language: Language) => {
+  const name = labels[code]?.[language]?.trim();
   return name && !/^-+$/.test(name) ? name : null;
 };
+
+/** The car's four coded fields in one language. */
+const carLabels = (car: RrrCar, labels: Labels, language: Language) => ({
+  bodyType: label(labels.car_body_type, car.car_body_type, language),
+  fuel: label(labels.fuel, car.car_fuel, language),
+  color: label(labels.color, car.car_color, language),
+  wheelDrive: label(labels.wheel_drive, car.car_wheel_drive, language),
+});
 
 async function syncModels(db: Db, rrr: RrrClient) {
   const brands = await withRetry(() => rrr.getCarBrands(), "car brands");
@@ -53,19 +64,26 @@ async function syncModels(db: Db, rrr: RrrClient) {
 async function syncCategories(db: Db, rrr: RrrClient) {
   const categories = await withRetry(() => rrr.getCategories(), "categories");
   const byId = new Map(categories.map((c) => [c.id, c]));
-  const nameOf = (c: RrrCategory) => c.lt ?? c.en ?? "";
+  const nameOf = (c: RrrCategory, language: Language) => c[language] ?? null;
 
-  const pathOf = (c: RrrCategory) => {
-    const names = [nameOf(c)];
-    for (let parent = byId.get(c.parent_id); parent; parent = byId.get(parent.parent_id)) names.unshift(nameOf(parent));
-    return names.join(" › ");
+  const pathOf = (c: RrrCategory, language: Language) => {
+    const names = [nameOf(c, language)];
+    for (let parent = byId.get(c.parent_id); parent; parent = byId.get(parent.parent_id)) {
+      names.unshift(nameOf(parent, language));
+    }
+    // A gap anywhere means no full path in this language, and the page falls back to Lithuanian.
+    return names.every(Boolean) ? names.join(" › ") : null;
   };
 
   const rows = categories.map((c) => ({
     id: Number(c.id),
     parentId: int(c.parent_id),
-    name: nameOf(c),
-    path: pathOf(c),
+    name: nameOf(c, "lt") ?? c.en ?? "",
+    nameEn: nameOf(c, "en"),
+    nameRu: nameOf(c, "ru"),
+    path: pathOf(c, "lt") ?? "",
+    pathEn: pathOf(c, "en"),
+    pathRu: pathOf(c, "ru"),
   }));
   for (let i = 0; i < rows.length; i += CATEGORY_BATCH_SIZE) {
     await db
@@ -76,7 +94,11 @@ async function syncCategories(db: Db, rrr: RrrClient) {
         set: {
           parentId: sql`excluded.parent_id`,
           name: sql`excluded.name`,
+          nameEn: sql`excluded.name_en`,
+          nameRu: sql`excluded.name_ru`,
           path: sql`excluded.path`,
+          pathEn: sql`excluded.path_en`,
+          pathRu: sql`excluded.path_ru`,
           updatedAt: new Date(),
         },
       });
@@ -84,7 +106,7 @@ async function syncCategories(db: Db, rrr: RrrClient) {
   return rows.length;
 }
 
-async function upsertCars(db: Db, cars: RrrCar[], labels: Record<RrrLookup, Record<string, string>>) {
+async function upsertCars(db: Db, cars: RrrCar[], labels: Labels) {
   if (cars.length === 0) return;
   await db
     .insert(rrrCars)
@@ -93,12 +115,10 @@ async function upsertCars(db: Db, cars: RrrCar[], labels: Record<RrrLookup, Reco
         id: Number(c.id),
         modelId: int(c.car_model),
         year: int(c.car_years),
-        bodyType: label(labels.car_body_type, c.car_body_type),
-        fuel: label(labels.fuel, c.car_fuel),
+        ...carLabels(c, labels, "lt"),
         powerKw: int(c.car_engine_power),
         engineCc: int(c.car_engine_cubic_capacity),
-        color: label(labels.color, c.car_color),
-        wheelDrive: label(labels.wheel_drive, c.car_wheel_drive),
+        translations: { en: carLabels(c, labels, "en"), ru: carLabels(c, labels, "ru") },
         raw: c,
       })),
     )
@@ -113,6 +133,7 @@ async function upsertCars(db: Db, cars: RrrCar[], labels: Record<RrrLookup, Reco
         engineCc: sql`excluded.engine_cc`,
         color: sql`excluded.color`,
         wheelDrive: sql`excluded.wheel_drive`,
+        translations: sql`excluded.translations`,
         raw: sql`excluded.raw`,
         updatedAt: new Date(),
       },

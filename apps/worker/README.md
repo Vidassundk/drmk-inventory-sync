@@ -19,7 +19,7 @@ Each job takes a Postgres advisory lock, so a second copy exits with an error in
 
 ### Cars
 
-Parts only carry a car ID, and RRR's cars only carry codes. `rrr:cars` translates them to Lithuanian names while syncing, so the dashboard doesn't need any code tables. It runs as a separate workflow step after each sync: the newest 100 cars after an incremental sync, and everything after the nightly full scan. An edit to an older car appears after the next nightly run.
+Parts only carry a car ID, and RRR's cars only carry codes. `rrr:cars` turns them into names in Lithuanian, English and Russian while syncing, so the dashboard doesn't need any code tables. Part names match their category, so syncing `rrr_categories` translates every part, including new ones. It runs as a separate workflow step after each sync: the newest 100 cars after an incremental sync, and everything after the nightly full scan. An edit to an older car appears after the next nightly run.
 
 ### Photo URLs
 

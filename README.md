@@ -45,7 +45,7 @@ pnpm smoke:rrr
 
 ## Translations
 
-Interface text lives in `apps/web/src/messages`, one JSON file per language. Add a key to `lt.json` first; a key missing from `en.json` or `ru.json` fails the typecheck. Visitors pick a language in the header, and it's saved in a cookie. Only the website is translated: data from RRR, like part names and car details, stays in Lithuanian on purpose.
+Interface text lives in `apps/web/src/messages`, one JSON file per language. Add a key to `lt.json` first; a key missing from `en.json` or `ru.json` fails the typecheck. Visitors pick a language in the header, and it's saved in a cookie. Part names, categories and car details come translated from RRR's catalogue, and fall back to Lithuanian if a translation is missing. Listing text stays as the team wrote it.
 
 ## Commands
 
