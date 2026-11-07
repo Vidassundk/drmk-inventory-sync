@@ -4,10 +4,15 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  // Cloudflare Access only protects app.vidasstirbys.com, so nothing else may serve this Worker.
+  // Cloudflare Access protects exactly these two addresses, so nothing else may serve this Worker. Every address in
+  // `routes` must also be listed in the Access application. app.vidasstirbys.com is the old address, kept while people
+  // move over to stock.deremika.lt.
   "workers_dev": false,
   "preview_urls": false,
-  "routes": [{ "pattern": "app.vidasstirbys.com", "custom_domain": true }],
+  "routes": [
+    { "pattern": "stock.deremika.lt", "custom_domain": true },
+    { "pattern": "app.vidasstirbys.com", "custom_domain": true },
+  ],
   "observability": { "enabled": true },
   "vars": { "R2_PUBLIC_BASE_URL": "https://images.vidasstirbys.com" },
   "hyperdrive": [
