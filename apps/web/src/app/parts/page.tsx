@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { AppLink } from "@/components/app-link";
+import { PartsFilters } from "@/components/parts-filters";
 import { PartsPagination } from "@/components/parts-pagination";
 import { PartsSearch } from "@/components/parts-search";
 import { PartsTable } from "@/components/parts-table";
@@ -66,6 +67,7 @@ export default async function PartsPage({ searchParams }: PageProps<"/parts">) {
         </div>
       </div>
       <PartsTabs query={query} />
+      <PartsFilters query={query} />
       <Suspense key={partsHref(query)} fallback={<PartsSkeleton />}>
         <PartsResults query={query} columns={visibleColumns(settings)} />
       </Suspense>

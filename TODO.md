@@ -20,7 +20,9 @@ The two rows that didn't match, and a few € figures, are most likely prices or
 ## List
 
 - [ ] Column sorting (newest-first only for now)
-- [ ] Filters: status, car, category, price range, location
+- [x] Filters: status and price
+- [ ] More filters from RRR's list: car, model, category, manufacturer, part code, quality, reservation, created by
+- [ ] Add an index on price if the price filter slows down as stock grows
 - [ ] Thumbnails: the list loads full-size photos, about 5 MB per page
 - [ ] Save table settings per user, so they follow people across devices (a cookie for now)
 

@@ -4,9 +4,11 @@ import {
   and,
   count,
   eq,
+  gte,
   images,
   inArray,
   isNull,
+  lte,
   ne,
   or,
   partImages,
@@ -22,7 +24,7 @@ import {
 import { getDb } from "./db";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
-import type { PartsQuery, PartTab } from "./parts-query";
+import type { PartsQuery } from "./parts-query";
 
 const MAX_SEARCH_TERMS = 5;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -79,19 +81,13 @@ export function imageUrl(image: { storageKey: string | null; sourceUrl: string |
 
 const inStock = () => inArray(parts.status, ["in_stock", "reserved"]);
 
-function tabFilter(tab: PartTab) {
-  switch (tab) {
-    case "stock":
-      return inStock();
-    case "reserved":
-      return eq(parts.status, "reserved");
-    case "sold":
-      return eq(parts.status, "sold");
-    case "noPrice":
-      return and(inStock(), or(isNull(parts.price), eq(parts.price, "0")));
-    case "all":
-      return undefined;
-  }
+function statusAndPriceFilter({ statuses, priceMin, priceMax, noPrice }: PartsQuery) {
+  return and(
+    statuses.length > 0 ? inArray(parts.status, statuses) : undefined,
+    priceMin !== null ? gte(parts.price, String(priceMin)) : undefined,
+    priceMax !== null ? lte(parts.price, String(priceMax)) : undefined,
+    noPrice ? or(isNull(parts.price), eq(parts.price, "0")) : undefined,
+  );
 }
 
 function similarFilter({ category, model }: Pick<PartsQuery, "category" | "model">) {
@@ -179,10 +175,16 @@ function searchFilter(q: string) {
   return or(text, byRrrId);
 }
 
-export async function listParts({ tab, q, page, pageSize, category, model }: PartsQuery) {
+export async function listParts(query: PartsQuery) {
+  const { q, page, pageSize, category, model } = query;
   const db = getDb();
   const { locale } = await getI18n();
-  const where = and(isNull(parts.deletedAt), tabFilter(tab), searchFilter(q), similarFilter({ category, model }));
+  const where = and(
+    isNull(parts.deletedAt),
+    statusAndPriceFilter(query),
+    searchFilter(q),
+    similarFilter({ category, model }),
+  );
 
   // Must match the parts_listed_idx order, or Postgres sorts the whole table for every page.
   const newestFirst = [sql`${parts.listedAt} desc nulls last`, sql`${parts.id} desc nulls last`];
