@@ -70,7 +70,7 @@ const priceValue = (text: string) => {
 function PriceInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-md border border-zinc-300 px-2 text-sm focus-within:border-accent dark:border-zinc-700">
-      <span className="text-zinc-500">€</span>
+      <span className="text-muted">€</span>
       <input
         inputMode="decimal"
         value={value}
@@ -112,7 +112,7 @@ function PricePanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
             aria-label={t("columns.price")}
           />
           <PriceInput label={t("filters.min")} value={min} onChange={(value) => (setMin(value), setNoPrice(false))} />
-          <span className="text-zinc-500">–</span>
+          <span className="text-muted">–</span>
           <PriceInput label={t("filters.max")} value={max} onChange={(value) => (setMax(value), setNoPrice(false))} />
         </div>
         <label className="flex items-center gap-2 text-sm">

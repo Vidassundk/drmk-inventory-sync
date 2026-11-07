@@ -35,7 +35,7 @@ export async function Pagination({ page, pageSize, total, hrefFor }: PaginationP
   const to = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-500">
+    <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
       <div className="flex items-center gap-2">
         <span>{t("pagination.rowsPerPage")}</span>
         {PAGE_SIZES.map((size) => (

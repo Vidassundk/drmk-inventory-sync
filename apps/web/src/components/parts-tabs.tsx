@@ -13,7 +13,7 @@ export async function PartsTabs({ query }: { query: PartsQuery }) {
           key={tab}
           href={tabHref(query, tab)}
           aria-current={tab === active ? "page" : undefined}
-          className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm whitespace-nowrap text-zinc-500 hover:text-foreground aria-[current=page]:border-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground"
+          className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm whitespace-nowrap text-muted hover:text-foreground aria-[current=page]:border-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground"
         >
           {t(`tabs.${tab}`)}
         </AppLink>

@@ -56,7 +56,7 @@ function ColumnRow({ columnKey, checked, sortable, onToggle }: RowProps) {
         {...attributes}
         {...listeners}
         aria-label={t("settings.move", { column: label })}
-        className="cursor-grab touch-none px-1 text-zinc-400 hover:text-foreground disabled:invisible"
+        className="cursor-grab touch-none px-1 text-muted hover:text-foreground disabled:invisible"
         disabled={!sortable}
       >
         ⠿
@@ -188,7 +188,7 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
           <button
             type="button"
             onClick={() => save(DEFAULT_COLUMN_SETTINGS)}
-            className="self-start text-sm text-zinc-500 hover:text-foreground"
+            className="self-start text-sm text-muted hover:text-foreground"
           >
             {t("settings.reset")}
           </button>

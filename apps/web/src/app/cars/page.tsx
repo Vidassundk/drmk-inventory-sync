@@ -45,7 +45,7 @@ export default async function CarsPage({ searchParams }: PageProps<"/cars">) {
 
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 md:p-6">
-      <h1 className="sr-only">{t("cars.title")}</h1>
+      <h1 className="text-2xl font-semibold">{t("cars.title")}</h1>
       <CarsFilters query={query} options={options} modelLabel={modelLabel} />
       <Suspense key={carsHref(query)} fallback={<CarsSkeleton />}>
         <CarsResults query={query} />

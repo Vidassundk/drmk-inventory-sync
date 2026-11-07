@@ -18,7 +18,7 @@ import {
 import type { PartRow } from "@/lib/parts";
 
 const NOWRAP = "whitespace-nowrap";
-const MUTED = "whitespace-nowrap text-zinc-500 tabular-nums";
+const MUTED = "whitespace-nowrap text-muted tabular-nums";
 
 const text = (value: string | null | undefined) => value || "–";
 
@@ -38,7 +38,7 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow, i18n
         <AppLink href={`/parts/${part.id}`} className="font-medium hover:underline">
           {part.name}
         </AppLink>
-        {part.category && part.category !== part.name && <div className="text-xs text-zinc-500">{part.category}</div>}
+        {part.category && part.category !== part.name && <div className="text-xs text-muted">{part.category}</div>}
       </>
     ),
   },
@@ -67,7 +67,7 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow, i18n
           <AppLink href={similarPartsHref(categoryId, carModelId)} className="text-accent-text hover:underline">
             {i18n.count("items", stock.count)}
           </AppLink>
-          <div className="text-xs text-zinc-500">{formatPrice(i18n, { price: stock.averagePrice, currency })}</div>
+          <div className="text-xs text-muted">{formatPrice(i18n, { price: stock.averagePrice, currency })}</div>
         </>
       ) : (
         "–"
@@ -79,12 +79,12 @@ const CELLS: Record<PartColumnKey, { cell?: string; render: (part: PartRow, i18n
       part.rrrCarId ? (
         <>
           <div className="font-medium">
-            <span className="mr-1.5 rounded bg-zinc-100 px-1 text-xs font-normal text-zinc-500 tabular-nums dark:bg-zinc-900">
+            <span className="mr-1.5 rounded bg-zinc-100 px-1 text-xs font-normal text-muted tabular-nums dark:bg-zinc-900">
               {part.rrrCarId}
             </span>
             {carTitle(part)}
           </div>
-          <div className="text-xs text-zinc-500">{carDetails(part)}</div>
+          <div className="text-xs text-muted">{carDetails(part)}</div>
         </>
       ) : (
         "–"
@@ -104,13 +104,13 @@ export async function PartsTable({ rows, columns }: { rows: PartRow[]; columns: 
   const i18n = await getI18n();
 
   if (rows.length === 0) {
-    return <p className="py-16 text-center text-sm text-zinc-500">{i18n.t("parts.empty")}</p>;
+    return <p className="py-16 text-center text-sm text-muted">{i18n.t("parts.empty")}</p>;
   }
 
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
       <table className="w-max min-w-full text-left text-sm">
-        <thead className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
+        <thead className="border-b border-zinc-200 text-xs text-muted dark:border-zinc-800">
           <tr>
             {columns.map((key) => (
               <th key={key} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">

@@ -26,7 +26,7 @@ async function PartsResults({ query, columns }: { query: PartsQuery; columns: Pa
           <span className="rounded bg-zinc-100 px-2 py-1 dark:bg-zinc-900">{filterLabel}</span>
           <AppLink
             href={partsHref(query, { category: null, model: null, page: 1 })}
-            className="text-zinc-500 hover:text-foreground"
+            className="text-muted hover:text-foreground"
           >
             {t("parts.clearFilter")}
           </AppLink>
@@ -67,8 +67,7 @@ export default async function PartsPage({ searchParams }: PageProps<"/parts">) {
   // Only the results wait for the database, so the tabs and filters stay put while they load.
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 md:p-6">
-      {/* Hidden from view, but it still names the page for screen readers. */}
-      <h1 className="sr-only">{t("parts.title")}</h1>
+      <h1 className="text-2xl font-semibold">{t("parts.title")}</h1>
       <PartsTabs query={query} />
       <PartsFilters query={query} brands={brands} modelLabel={modelLabel} carLabel={carLabel} settings={settings} />
       <Suspense key={partsHref(query)} fallback={<PartsSkeleton />}>

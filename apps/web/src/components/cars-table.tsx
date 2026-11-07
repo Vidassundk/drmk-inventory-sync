@@ -66,13 +66,13 @@ export async function CarsTable({ rows }: { rows: CarRow[] }) {
   const { t } = await getI18n();
 
   if (rows.length === 0) {
-    return <p className="py-16 text-center text-sm text-zinc-500">{t("cars.empty")}</p>;
+    return <p className="py-16 text-center text-sm text-muted">{t("cars.empty")}</p>;
   }
 
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
       <table className="w-max min-w-full text-left text-sm">
-        <thead className="border-b border-zinc-200 text-xs text-zinc-500 dark:border-zinc-800">
+        <thead className="border-b border-zinc-200 text-xs text-muted dark:border-zinc-800">
           <tr>
             {COLUMNS.map((column) => (
               <th key={column.label} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">

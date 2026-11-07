@@ -26,7 +26,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   if (!children) return null;
   return (
     <div className="grid grid-cols-[9rem_1fr] gap-3 py-2 text-sm">
-      <dt className="text-zinc-500">{label}</dt>
+      <dt className="text-muted">{label}</dt>
       <dd className="min-w-0 wrap-break-word whitespace-pre-line">{children}</dd>
     </div>
   );
@@ -43,7 +43,7 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
       <BackToList />
       <div>
         <h1 className="text-xl font-semibold">{part.name}</h1>
-        {part.categoryPath && <p className="text-sm text-zinc-500">{part.categoryPath}</p>}
+        {part.categoryPath && <p className="text-sm text-muted">{part.categoryPath}</p>}
       </div>
       {part.deletedAt && (
         <p className="rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
@@ -67,7 +67,7 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
                   {part.rrrCarId} {carTitle(part)}
                 </span>
                 <br />
-                <span className="text-zinc-500">{carDetails(part)}</span>
+                <span className="text-muted">{carDetails(part)}</span>
               </>
             )}
           </Field>

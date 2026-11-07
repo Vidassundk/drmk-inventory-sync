@@ -45,15 +45,26 @@ export function PartsSearch() {
   }
 
   return (
-    <input
-      ref={input}
-      type="search"
-      defaultValue={currentQ}
-      onChange={(event) => search(event.target.value)}
-      placeholder={t(onCars ? "cars.searchPlaceholder" : "parts.searchPlaceholder")}
-      aria-label={t(onCars ? "cars.searchLabel" : "parts.searchLabel")}
-      aria-busy={pending}
-      className="h-9 w-full rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-accent aria-busy:opacity-60 dark:border-zinc-700"
-    />
+    <div className="relative">
+      <svg
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 fill-none stroke-current stroke-[1.5] text-muted"
+        strokeLinecap="round"
+      >
+        <circle cx="7" cy="7" r="4.5" />
+        <path d="m10.5 10.5 3 3" />
+      </svg>
+      <input
+        ref={input}
+        type="search"
+        defaultValue={currentQ}
+        onChange={(event) => search(event.target.value)}
+        placeholder={t(onCars ? "cars.searchPlaceholder" : "parts.searchPlaceholder")}
+        aria-label={t(onCars ? "cars.searchLabel" : "parts.searchLabel")}
+        aria-busy={pending}
+        className="h-9 w-full rounded-md border border-zinc-300 bg-transparent pr-3 pl-9 text-sm outline-none focus:border-accent aria-busy:opacity-60 dark:border-zinc-700"
+      />
+    </div>
   );
 }

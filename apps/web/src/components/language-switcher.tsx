@@ -44,7 +44,7 @@ export function LanguageSwitcher() {
             lang={locale}
             onClick={() => choose(locale)}
             aria-pressed={locale === shown}
-            className="rounded px-1.5 py-1 text-zinc-500 uppercase hover:text-foreground aria-pressed:font-semibold aria-pressed:text-foreground"
+            className="rounded px-1.5 py-1 text-muted uppercase hover:text-foreground aria-pressed:font-semibold aria-pressed:text-foreground"
           >
             {locale}
           </button>

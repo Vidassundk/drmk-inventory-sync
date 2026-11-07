@@ -59,7 +59,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <aside className="shrink-0 border-b border-zinc-200 px-4 py-2 md:w-60 md:border-r md:border-b-0 md:px-3 md:py-4 dark:border-zinc-800">
               {/* Stays in view below the sticky header (4rem tall on wide screens) while long lists scroll. */}
               <div className="md:sticky md:top-20">
-                <h2 className="hidden px-3 pb-2 text-xs font-medium tracking-wide text-zinc-500 uppercase md:block">
+                <h2 className="hidden px-3 pb-2 text-xs font-medium tracking-wide text-muted uppercase md:block">
                   {t("app.title")}
                 </h2>
                 <MainNav />

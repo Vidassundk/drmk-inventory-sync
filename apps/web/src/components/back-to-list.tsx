@@ -12,7 +12,7 @@ export function BackToList() {
     <button
       type="button"
       onClick={() => (window.history.length > 1 ? router.back() : router.push("/parts"))}
-      className="self-start text-sm text-zinc-500 hover:text-foreground"
+      className="self-start text-sm text-muted hover:text-foreground"
     >
       ← {t("parts.title")}
     </button>

@@ -36,7 +36,7 @@ export async function SimilarParts({ part }: Props) {
               <AppLink href={`/parts/${similar.id}`} className="font-medium hover:underline">
                 {similar.name}
               </AppLink>
-              <div className="text-xs text-zinc-500 tabular-nums">
+              <div className="text-xs text-muted tabular-nums">
                 {[similar.rrrId, similar.carYear, statusLabel(i18n, similar.status)].filter(Boolean).join(" · ")}
               </div>
               <div className="tabular-nums">{formatPrice(i18n, similar)}</div>

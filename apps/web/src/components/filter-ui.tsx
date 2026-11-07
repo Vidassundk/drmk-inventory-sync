@@ -133,7 +133,7 @@ export function ListPanel({ options, initial, label, onApply, onClear }: ListPan
             </button>
           </li>
         ))}
-        {shown.length === 0 && <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.noOptions")}</li>}
+        {shown.length === 0 && <li className="px-3 py-2 text-sm text-muted">{t("filters.noOptions")}</li>}
       </ul>
       <PanelFooter onClear={onClear} />
     </form>
@@ -240,7 +240,7 @@ export function RemoteOptionsPanel({ url, params, label, initial, onApply, onCle
             </li>
           ))}
         {!searching && options?.length === 0 && (
-          <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.noOptions")}</li>
+          <li className="px-3 py-2 text-sm text-muted">{t("filters.noOptions")}</li>
         )}
         {(searching || loadingMore) && (
           <li role="status" aria-label={t("filters.loading")} className="grid place-items-center py-3">
@@ -290,13 +290,13 @@ export function AddFilterMenu<K extends string>({
               className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
             >
               {item.label}
-              <span aria-hidden="true" className="text-zinc-400">
+              <span aria-hidden="true" className="text-muted">
                 ›
               </span>
             </button>
           </li>
         ))}
-        {shown.length === 0 && <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.noMatches")}</li>}
+        {shown.length === 0 && <li className="px-3 py-2 text-sm text-muted">{t("filters.noMatches")}</li>}
       </ul>
     </div>
   );
@@ -328,7 +328,7 @@ export function FilterChip({ label, value, open, onToggle, onRemove, children }:
             {value && ":"}
           </span>
           {value && <span className="max-w-64 truncate">{value}</span>}
-          <span aria-hidden="true" className={`text-xs text-zinc-500 ${open ? "rotate-180" : ""}`}>
+          <span aria-hidden="true" className={`text-xs text-muted ${open ? "rotate-180" : ""}`}>
             ▾
           </span>
         </button>
@@ -336,7 +336,7 @@ export function FilterChip({ label, value, open, onToggle, onRemove, children }:
           type="button"
           onClick={onRemove}
           aria-label={t("filters.remove", { filter: label })}
-          className="rounded-full px-2 py-1 text-zinc-500 hover:text-foreground"
+          className="rounded-full px-2 py-1 text-muted hover:text-foreground"
         >
           ✕
         </button>
@@ -391,7 +391,7 @@ function RangeInput({
         aria-label={label}
         className="w-full min-w-0 bg-transparent outline-none"
       />
-      <span className="text-zinc-500">{unit}</span>
+      <span className="text-muted">{unit}</span>
     </label>
   );
 }
@@ -422,7 +422,7 @@ export function RangePanel({ unit, initial, onApply, onClear }: RangePanelProps)
     <form onSubmit={submit} className={PANEL}>
       <div className="flex items-center gap-2 p-3">
         <RangeInput label={t("filters.from")} unit={unit} value={min} onChange={setMin} />
-        <span className="text-zinc-500">–</span>
+        <span className="text-muted">–</span>
         <RangeInput label={t("filters.to")} unit={unit} value={max} onChange={setMax} />
       </div>
       <PanelFooter onClear={onClear} />

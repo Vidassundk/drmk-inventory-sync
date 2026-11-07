@@ -27,7 +27,7 @@ export function CodePill({ code, primary = false }: { code: string; primary?: bo
         onClick={copy}
         aria-label={t(copied ? "code.copied" : "code.copy", { code })}
         title={t(copied ? "code.copiedTitle" : "code.copyTitle")}
-        className="rounded-full p-1 text-zinc-500 hover:bg-zinc-200 hover:text-foreground dark:hover:bg-zinc-800"
+        className="rounded-full p-1 text-muted hover:bg-zinc-200 hover:text-foreground dark:hover:bg-zinc-800"
       >
         <svg
           viewBox="0 0 16 16"
