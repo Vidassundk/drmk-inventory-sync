@@ -20,6 +20,12 @@ export type PartStatus = (typeof PART_STATUSES)[number];
 /** Parts you can still sell. An empty list of statuses means every status. */
 const DEFAULT_STATUSES: PartStatus[] = ["in_stock", "reserved"];
 
+/** RRR's quality codes. Unlike the other filters these are numbers, and 2 isn't used. */
+export const PART_QUALITIES = [0, 1, 3, 4] as const;
+export type PartQuality = (typeof PART_QUALITIES)[number];
+
+export type PartCode = "with" | "without";
+
 export type PartsQuery = {
   q: string;
   page: number;
@@ -30,6 +36,9 @@ export type PartsQuery = {
   noPrice: boolean;
   brand: string | null;
   car: number | null;
+  /** Empty means every quality. */
+  qualities: PartQuality[];
+  code: PartCode | null;
   /** Set together to list the parts of one kind for one car model, which is what "Sandėlyje" counts. */
   category: number | null;
   model: number | null;
@@ -45,6 +54,8 @@ const DEFAULTS: PartsQuery = {
   noPrice: false,
   brand: null,
   car: null,
+  qualities: [],
+  code: null,
   category: null,
   model: null,
 };
@@ -82,6 +93,8 @@ export const hasFilters = (query: PartsQuery) =>
   query.noPrice ||
   query.brand !== null ||
   query.car !== null ||
+  query.qualities.length > 0 ||
+  query.code !== null ||
   query.category !== null ||
   query.model !== null;
 
@@ -102,6 +115,16 @@ function priceParam(value: string | string[] | undefined) {
   const text = first(value)?.replace(",", ".");
   const price = text ? Number(text) : NaN;
   return Number.isFinite(price) && price >= 0 ? price : null;
+}
+
+function qualityParam(value: string | string[] | undefined) {
+  const wanted = first(value)?.split(",") ?? [];
+  return PART_QUALITIES.filter((quality) => wanted.includes(String(quality)));
+}
+
+function codeParam(value: string | string[] | undefined): PartCode | null {
+  const code = first(value);
+  return code === "with" || code === "without" ? code : null;
 }
 
 function statusParam(value: string | string[] | undefined) {
@@ -128,6 +151,8 @@ export function parsePartsQuery(params: RawParams): PartsQuery {
     noPrice,
     brand: first(params.brand)?.trim().slice(0, 60) || DEFAULTS.brand,
     car: idParam(params.car),
+    qualities: qualityParam(params.quality),
+    code: codeParam(params.code),
     category: idParam(params.category),
     model: idParam(params.model),
   };
@@ -146,6 +171,8 @@ export function partsHref(query: PartsQuery, changes: Partial<PartsQuery> = {}) 
   if (next.noPrice) params.set("noPrice", "1");
   if (next.brand) params.set("brand", next.brand);
   if (next.car) params.set("car", String(next.car));
+  if (next.qualities.length > 0) params.set("quality", next.qualities.join(","));
+  if (next.code) params.set("code", next.code);
   if (next.q) params.set("q", next.q);
   if (next.page !== DEFAULTS.page) params.set("page", String(next.page));
   if (next.pageSize !== DEFAULTS.pageSize) params.set("pageSize", String(next.pageSize));

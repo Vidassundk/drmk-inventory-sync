@@ -83,7 +83,7 @@ export function imageUrl(image: { storageKey: string | null; sourceUrl: string |
 
 const inStock = () => inArray(parts.status, ["in_stock", "reserved"]);
 
-function filtersFor({ statuses, priceMin, priceMax, noPrice, brand, car }: PartsQuery) {
+function filtersFor({ statuses, priceMin, priceMax, noPrice, brand, car, qualities, code }: PartsQuery) {
   const brandCarIds = sql`(
     select ${rrrCars.id} from ${rrrCars}
     join ${rrrCarModels} on ${rrrCarModels.id} = ${rrrCars.modelId}
@@ -97,6 +97,14 @@ function filtersFor({ statuses, priceMin, priceMax, noPrice, brand, car }: Parts
     noPrice ? or(isNull(parts.price), eq(parts.price, "0")) : undefined,
     brand ? sql`${parts.rrrCarId} in ${brandCarIds}` : undefined,
     car ? eq(parts.rrrCarId, car) : undefined,
+    qualities.length > 0 ? inArray(parts.quality, qualities) : undefined,
+    // A part counts as having a code if any of its three code fields is filled in.
+    code === "with"
+      ? sql`coalesce(${parts.manufacturerCode}, ${parts.visibleCode}, ${parts.otherCode}) is not null`
+      : undefined,
+    code === "without"
+      ? sql`coalesce(${parts.manufacturerCode}, ${parts.visibleCode}, ${parts.otherCode}) is null`
+      : undefined,
   );
 }
 

@@ -13,27 +13,29 @@ import {
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n-provider";
 import { Spinner } from "@/components/spinner";
-import { statusLabel } from "@/lib/part-format";
+import { qualityLabel, statusLabel } from "@/lib/part-format";
 import {
   clearedFiltersHref,
   hasFilters,
   OPTIONS_PAGE_SIZE,
+  PART_QUALITIES,
   PART_STATUSES,
   partsHref,
   type PartsQuery,
-  type PartStatus,
 } from "@/lib/parts-query";
 
-type Filter = "status" | "price" | "brand" | "model" | "car";
+type Filter = "status" | "price" | "brand" | "model" | "car" | "code" | "quality";
 type Apply = (changes: Partial<PartsQuery>) => void;
 
-const FILTERS: Filter[] = ["status", "price", "brand", "model", "car"];
+const FILTERS: Filter[] = ["status", "price", "brand", "model", "car", "code", "quality"];
 const FILTER_LABELS = {
   status: "columns.status",
   price: "columns.price",
   brand: "filters.brand",
   model: "filters.model",
   car: "filters.car",
+  code: "filters.code",
+  quality: "columns.quality",
 } as const;
 const SEARCH_DELAY_MS = 200;
 const LOAD_MORE_DISTANCE_PX = 200;
@@ -59,32 +61,64 @@ function PanelFooter({ onClear }: { onClear: () => void }) {
   );
 }
 
-function StatusPanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
-  const i18n = useI18n();
-  const [selected, setSelected] = useState(query.statuses);
+type CheckPanelProps<T> = {
+  options: readonly T[];
+  initial: T[];
+  labelOf: (option: T) => string;
+  onApply: (selected: T[]) => void;
+  onClear: () => void;
+};
 
-  function toggle(status: PartStatus) {
+/** A filter where several options can be ticked at once, like status and quality. */
+function CheckPanel<T extends string | number>({ options, initial, labelOf, onApply, onClear }: CheckPanelProps<T>) {
+  const [selected, setSelected] = useState(initial);
+
+  function toggle(option: T) {
     setSelected((current) =>
-      current.includes(status) ? current.filter((other) => other !== status) : [...current, status],
+      current.includes(option) ? current.filter((other) => other !== option) : [...current, option],
     );
   }
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    apply({ statuses: PART_STATUSES.filter((status) => selected.includes(status)) });
+    onApply(options.filter((option) => selected.includes(option)));
   }
 
   return (
     <form onSubmit={submit} className={PANEL}>
       <div className="flex flex-col gap-1 p-3">
-        {PART_STATUSES.map((status) => (
-          <label key={status} className="flex items-center gap-2 py-1 text-sm">
-            <input type="checkbox" checked={selected.includes(status)} onChange={() => toggle(status)} />
-            {statusLabel(i18n, status)}
+        {options.map((option) => (
+          <label key={option} className="flex items-center gap-2 py-1 text-sm">
+            <input type="checkbox" checked={selected.includes(option)} onChange={() => toggle(option)} />
+            {labelOf(option)}
           </label>
         ))}
       </div>
-      <PanelFooter onClear={() => apply({ statuses: [] })} />
+      <PanelFooter onClear={onClear} />
+    </form>
+  );
+}
+
+function CodePanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
+  const { t } = useI18n();
+  const [code, setCode] = useState(query.code);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    apply({ code });
+  }
+
+  return (
+    <form onSubmit={submit} className={PANEL}>
+      <div className="flex flex-col gap-1 p-3">
+        {(["with", "without"] as const).map((option) => (
+          <label key={option} className="flex items-center gap-2 py-1 text-sm">
+            <input type="radio" name="part-code" checked={code === option} onChange={() => setCode(option)} />
+            {t(`filters.code.${option}`)}
+          </label>
+        ))}
+      </div>
+      <PanelFooter onClear={() => apply({ code: null })} />
     </form>
   );
 }
@@ -448,6 +482,8 @@ export function PartsFilters({ query, brands, modelLabel, carLabel }: FiltersPro
   // With a category too, this came from a "Sandėlyje" link, which has its own label above the table.
   const showModel = (query.model !== null && query.category === null) || open === "model";
   const showCar = query.car !== null || open === "car";
+  const showCode = query.code !== null || open === "code";
+  const showQuality = query.qualities.length > 0 || open === "quality";
   const brandParam: Record<string, string> = query.brand ? { brand: query.brand } : {};
 
   return (
@@ -460,7 +496,13 @@ export function PartsFilters({ query, brands, modelLabel, carLabel }: FiltersPro
           onToggle={() => toggle("status")}
           onRemove={() => apply({ statuses: [] })}
         >
-          <StatusPanel query={query} apply={apply} />
+          <CheckPanel
+            options={PART_STATUSES}
+            initial={query.statuses}
+            labelOf={(status) => statusLabel(i18n, status)}
+            onApply={(statuses) => apply({ statuses })}
+            onClear={() => apply({ statuses: [] })}
+          />
         </FilterChip>
       )}
       {showPrice && (
@@ -518,6 +560,34 @@ export function PartsFilters({ query, brands, modelLabel, carLabel }: FiltersPro
             initial={query.car}
             onApply={(car) => apply({ car })}
             onClear={() => apply({ car: null })}
+          />
+        </FilterChip>
+      )}
+      {showCode && (
+        <FilterChip
+          label={t("filters.code")}
+          value={query.code ? t(`filters.code.${query.code}`) : undefined}
+          open={open === "code"}
+          onToggle={() => toggle("code")}
+          onRemove={() => apply({ code: null })}
+        >
+          <CodePanel query={query} apply={apply} />
+        </FilterChip>
+      )}
+      {showQuality && (
+        <FilterChip
+          label={t("columns.quality")}
+          value={query.qualities.map((quality) => qualityLabel(i18n, quality)).join(", ") || undefined}
+          open={open === "quality"}
+          onToggle={() => toggle("quality")}
+          onRemove={() => apply({ qualities: [] })}
+        >
+          <CheckPanel
+            options={PART_QUALITIES}
+            initial={query.qualities}
+            labelOf={(quality) => qualityLabel(i18n, quality)}
+            onApply={(qualities) => apply({ qualities })}
+            onClear={() => apply({ qualities: [] })}
           />
         </FilterChip>
       )}
