@@ -114,7 +114,7 @@ export function PartsTableSettings({ settings: initial }: { settings: ColumnSett
         onClick={() => dialog.current?.showModal()}
         aria-label={t("settings.title")}
         title={t("settings.title")}
-        className="grid size-9 shrink-0 place-items-center rounded-md border border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+        className="grid size-8 shrink-0 place-items-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900"
       >
         <svg
           viewBox="0 0 16 16"

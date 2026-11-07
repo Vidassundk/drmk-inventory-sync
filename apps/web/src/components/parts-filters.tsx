@@ -12,7 +12,9 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n-provider";
+import { PartsTableSettings } from "@/components/parts-table-settings";
 import { Spinner } from "@/components/spinner";
+import type { ColumnSettings } from "@/lib/part-columns";
 import { qualityLabel, statusLabel } from "@/lib/part-format";
 import {
   clearedFiltersHref,
@@ -440,15 +442,22 @@ function priceSummary({ priceMin, priceMax, noPrice }: PartsQuery, noPriceLabel:
   return undefined;
 }
 
-type FiltersProps = { query: PartsQuery; brands: string[]; modelLabel: string | null; carLabel: string | null };
+type FiltersProps = {
+  query: PartsQuery;
+  brands: string[];
+  modelLabel: string | null;
+  carLabel: string | null;
+  settings: ColumnSettings;
+};
 
-export function PartsFilters({ query, brands, modelLabel, carLabel }: FiltersProps) {
+export function PartsFilters({ query, brands, modelLabel, carLabel, settings }: FiltersProps) {
   const i18n = useI18n();
   const { t } = i18n;
   const router = useRouter();
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<Filter | "menu" | null>(null);
   const [, startTransition] = useTransition();
+  const [refreshing, startRefresh] = useTransition();
 
   useEffect(() => {
     if (!open) return;
@@ -471,6 +480,7 @@ export function PartsFilters({ query, brands, modelLabel, carLabel }: FiltersPro
     startTransition(() => router.push(href));
   }
 
+  const refresh = () => startRefresh(() => router.refresh());
   const apply: Apply = (changes) => go(partsHref(query, { ...changes, page: 1 }));
   const toggle = (panel: Filter) => setOpen((current) => (current === panel ? null : panel));
 
@@ -602,15 +612,37 @@ export function PartsFilters({ query, brands, modelLabel, carLabel }: FiltersPro
         </button>
         {open === "menu" && <AddFilterMenu onChoose={setOpen} />}
       </div>
-      {hasFilters(query) && (
+      <div className="ml-auto flex items-center gap-2">
+        {hasFilters(query) && (
+          <button
+            type="button"
+            onClick={() => go(clearedFiltersHref(query))}
+            className="rounded-md border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          >
+            {t("filters.clearAll")}
+          </button>
+        )}
+        <PartsTableSettings settings={settings} />
         <button
           type="button"
-          onClick={() => go(clearedFiltersHref(query))}
-          className="ml-auto rounded-md border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          onClick={refresh}
+          disabled={refreshing}
+          aria-label={t("filters.refresh")}
+          title={t("filters.refresh")}
+          className="grid size-8 place-items-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900"
         >
-          {t("filters.clearAll")}
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden="true"
+            className={`size-4 fill-none stroke-current stroke-[1.5] ${refreshing ? "animate-spin" : ""}`}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M13.5 8A5.5 5.5 0 0 1 3.6 11.3M2.5 8a5.5 5.5 0 0 1 9.9-3.3" />
+            <path d="M12.5 2v2.8H9.7M3.5 14v-2.8h2.8" />
+          </svg>
         </button>
-      )}
+      </div>
     </div>
   );
 }

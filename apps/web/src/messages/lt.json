@@ -1,4 +1,5 @@
 {
+  "app.title": "Inventorius",
   "app.description": "Inventoriaus valdymo skydelis",
   "theme.toggle": "Perjungti šviesią ar tamsią temą",
   "theme.title": "Perjungti temą",
@@ -18,6 +19,7 @@
   "filters.remove": "Pašalinti filtrą {filter}",
   "filters.apply": "Filtruoti",
   "filters.clearAll": "Išvalyti filtrus",
+  "filters.refresh": "Atnaujinti",
   "filters.min": "Min",
   "filters.max": "Max",
   "filters.brand": "Gamintojas",

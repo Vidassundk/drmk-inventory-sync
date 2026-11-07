@@ -1,4 +1,5 @@
 {
+  "app.title": "Inventory",
   "app.description": "Inventory dashboard",
   "theme.toggle": "Switch between light and dark theme",
   "theme.title": "Switch theme",
@@ -18,6 +19,7 @@
   "filters.remove": "Remove filter {filter}",
   "filters.apply": "Filter",
   "filters.clearAll": "Clear filters",
+  "filters.refresh": "Refresh",
   "filters.min": "Min",
   "filters.max": "Max",
   "filters.brand": "Manufacturer",

@@ -1,4 +1,4 @@
-import { ViewTransition } from "react";
+import { Suspense, ViewTransition } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { AppLink } from "@/components/app-link";
@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { I18nProvider } from "@/components/i18n-provider";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Logo } from "@/components/logo";
+import { PartsSearch } from "@/components/parts-search";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getI18n } from "@/lib/i18n-server";
 import { parseTheme, THEME_COOKIE } from "@/lib/theme";
@@ -35,10 +36,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang={locale} data-theme={theme} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale}>
-          <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-2 md:px-6 dark:border-zinc-800">
-            <AppLink href="/parts" aria-label={t("parts.title")}>
+          <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-zinc-200 px-4 py-3.5 md:px-6 dark:border-zinc-800">
+            <AppLink href="/parts" className="flex items-center gap-3">
               <Logo className="h-6 w-auto" />
+              <span className="text-sm text-zinc-500">{t("app.title")}</span>
             </AppLink>
+            <div className="order-last w-full md:order-none md:w-auto md:max-w-xl md:flex-1">
+              <Suspense>
+                <PartsSearch />
+              </Suspense>
+            </div>
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
               <ThemeToggle />

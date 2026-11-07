@@ -4,9 +4,7 @@ import { cookies } from "next/headers";
 import { AppLink } from "@/components/app-link";
 import { PartsFilters } from "@/components/parts-filters";
 import { PartsPagination } from "@/components/parts-pagination";
-import { PartsSearch } from "@/components/parts-search";
 import { PartsTable } from "@/components/parts-table";
-import { PartsTableSettings } from "@/components/parts-table-settings";
 import { PartsTabs } from "@/components/parts-tabs";
 import { getI18n } from "@/lib/i18n-server";
 import { COLUMNS_COOKIE, parseColumnSettings, visibleColumns, type PartColumnKey } from "@/lib/part-columns";
@@ -61,18 +59,13 @@ export default async function PartsPage({ searchParams }: PageProps<"/parts">) {
     carLabelFor(query.car),
   ]);
 
-  // Only the results wait for the database. The search box stays mounted, so it keeps focus while typing.
+  // Only the results wait for the database, so the tabs and filters stay put while they load.
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 md:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">{t("parts.title")}</h1>
-        <div className="flex w-full max-w-xl items-center gap-2">
-          <PartsSearch query={query} />
-          <PartsTableSettings settings={settings} />
-        </div>
-      </div>
+      {/* Hidden from view, but it still names the page for screen readers. */}
+      <h1 className="sr-only">{t("parts.title")}</h1>
       <PartsTabs query={query} />
-      <PartsFilters query={query} brands={brands} modelLabel={modelLabel} carLabel={carLabel} />
+      <PartsFilters query={query} brands={brands} modelLabel={modelLabel} carLabel={carLabel} settings={settings} />
       <Suspense key={partsHref(query)} fallback={<PartsSkeleton />}>
         <PartsResults query={query} columns={visibleColumns(settings)} />
       </Suspense>

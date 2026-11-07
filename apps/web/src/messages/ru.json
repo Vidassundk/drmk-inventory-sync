@@ -1,4 +1,5 @@
 {
+  "app.title": "Инвентарь",
   "app.description": "Панель управления складом",
   "theme.toggle": "Переключить светлую или тёмную тему",
   "theme.title": "Сменить тему",
@@ -18,6 +19,7 @@
   "filters.remove": "Удалить фильтр {filter}",
   "filters.apply": "Применить",
   "filters.clearAll": "Сбросить фильтры",
+  "filters.refresh": "Обновить",
   "filters.min": "Мин",
   "filters.max": "Макс",
   "filters.brand": "Производитель",
