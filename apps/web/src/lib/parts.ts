@@ -24,6 +24,7 @@ import {
 import { getDb } from "./db";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
+import { carTitle } from "./part-format";
 import type { PartsQuery } from "./parts-query";
 
 const MAX_SEARCH_TERMS = 5;
@@ -99,6 +100,70 @@ function filtersFor({ statuses, priceMin, priceMax, noPrice, brand }: PartsQuery
 
 // RRR's own shortcut list, shown above the alphabetical brands.
 const TOP_BRANDS = ["BMW", "Mercedes-Benz", "Audi", "Ford", "Renault", "Volvo", "Opel", "Volkswagen", "ZAZ"];
+
+/**
+ * One page of catalogue models matching every search word. The catalogue has thousands of models, so the
+ * filter loads them as it scrolls. Brands we stock come first, A to Z, then the rest, so the list opens on
+ * Audi rather than on brands like Acura that we've never had.
+ */
+export async function searchCarModels(q: string, brand: string | null, limit: number, offset: number) {
+  const db = getDb();
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_TERMS);
+  const stocked = db
+    .selectDistinct({ brand: sql<string>`${rrrCarModels.brand}`.as("stocked_brand") })
+    .from(parts)
+    .innerJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
+    .innerJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
+    .where(and(inStock(), isNull(parts.deletedAt)))
+    .as("stocked");
+
+  const rows = await db
+    .select({
+      id: rrrCarModels.id,
+      carBrand: rrrCarModels.brand,
+      carModel: rrrCarModels.name,
+      carYearStart: rrrCarModels.yearStart,
+      carYearEnd: rrrCarModels.yearEnd,
+    })
+    .from(rrrCarModels)
+    .leftJoin(stocked, eq(stocked.brand, rrrCarModels.brand))
+    .where(
+      and(
+        brand ? eq(rrrCarModels.brand, brand) : undefined,
+        ...terms.map(
+          (term) =>
+            sql`lower(${rrrCarModels.brand} || ' ' || ${rrrCarModels.name}) like ${`%${term.replace(/[\\%_]/g, "\\$&")}%`}`,
+        ),
+      ),
+    )
+    // The id comes last so the order never changes between pages, or scrolling could repeat or skip a model.
+    .orderBy(
+      sql`${stocked.brand} is null`,
+      rrrCarModels.brand,
+      rrrCarModels.name,
+      rrrCarModels.yearStart,
+      rrrCarModels.id,
+    )
+    .limit(limit)
+    .offset(offset);
+
+  return rows.map((row) => ({ id: row.id, label: carTitle(row)! }));
+}
+
+/** The chosen model's name, for the filter chip. */
+export async function carModelLabel(model: number | null) {
+  if (!model) return null;
+  const [row] = await getDb()
+    .select({
+      carBrand: rrrCarModels.brand,
+      carModel: rrrCarModels.name,
+      carYearStart: rrrCarModels.yearStart,
+      carYearEnd: rrrCarModels.yearEnd,
+    })
+    .from(rrrCarModels)
+    .where(eq(rrrCarModels.id, model));
+  return row ? carTitle(row) : null;
+}
 
 /** Every brand in RRR's catalogue, not only ones in stock, in the order RRR lists them. */
 export async function listCarBrands() {
@@ -265,7 +330,8 @@ export async function listParts(query: PartsQuery) {
 
 /** The category and car model behind a "Sandėlyje" link, for the filter label above the list. */
 export async function similarFilterLabel({ category, model }: Pick<PartsQuery, "category" | "model">) {
-  if (!category && !model) return null;
+  // A model on its own has its own filter chip; this label is for the "Sandėlyje" links.
+  if (!category) return null;
   const db = getDb();
   const { locale } = await getI18n();
   const [[categoryRow], [modelRow]] = await Promise.all([

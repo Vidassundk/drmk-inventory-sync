@@ -10,7 +10,7 @@ import { PartsTableSettings } from "@/components/parts-table-settings";
 import { PartsTabs } from "@/components/parts-tabs";
 import { getI18n } from "@/lib/i18n-server";
 import { COLUMNS_COOKIE, parseColumnSettings, visibleColumns, type PartColumnKey } from "@/lib/part-columns";
-import { listCarBrands, listParts, similarFilterLabel } from "@/lib/parts";
+import { carModelLabel, listCarBrands, listParts, similarFilterLabel } from "@/lib/parts";
 import { parsePartsQuery, partsHref, type PartsQuery } from "@/lib/parts-query";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -55,6 +55,7 @@ export default async function PartsPage({ searchParams }: PageProps<"/parts">) {
   const query = parsePartsQuery(await searchParams);
   // Column choices live in a cookie, so the server renders the right table with no flash of the default one.
   const settings = parseColumnSettings((await cookies()).get(COLUMNS_COOKIE)?.value);
+  const [brands, modelLabel] = await Promise.all([listCarBrands(), carModelLabel(query.model)]);
 
   // Only the results wait for the database. The search box stays mounted, so it keeps focus while typing.
   return (
@@ -67,7 +68,7 @@ export default async function PartsPage({ searchParams }: PageProps<"/parts">) {
         </div>
       </div>
       <PartsTabs query={query} />
-      <PartsFilters query={query} brands={await listCarBrands()} />
+      <PartsFilters query={query} brands={brands} modelLabel={modelLabel} />
       <Suspense key={partsHref(query)} fallback={<PartsSkeleton />}>
         <PartsResults query={query} columns={visibleColumns(settings)} />
       </Suspense>

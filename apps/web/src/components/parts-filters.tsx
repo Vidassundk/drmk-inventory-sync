@@ -1,23 +1,40 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type FormEvent,
+  type ReactNode,
+  type UIEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n-provider";
 import { statusLabel } from "@/lib/part-format";
 import {
   clearedFiltersHref,
   hasFilters,
+  MODELS_PAGE_SIZE,
   PART_STATUSES,
   partsHref,
   type PartsQuery,
   type PartStatus,
 } from "@/lib/parts-query";
 
-type Filter = "status" | "price" | "brand";
+type Filter = "status" | "price" | "brand" | "model";
 type Apply = (changes: Partial<PartsQuery>) => void;
 
-const FILTERS: Filter[] = ["status", "price", "brand"];
-const FILTER_LABELS = { status: "columns.status", price: "columns.price", brand: "filters.brand" } as const;
+const FILTERS: Filter[] = ["status", "price", "brand", "model"];
+const FILTER_LABELS = {
+  status: "columns.status",
+  price: "columns.price",
+  brand: "filters.brand",
+  model: "filters.model",
+} as const;
+const SEARCH_DELAY_MS = 200;
+const LOAD_MORE_DISTANCE_PX = 200;
 // Panels sit under their chip, but under the whole row on phones, where a chip near the edge would push them off-screen.
 const PANEL =
   "absolute top-full left-0 z-20 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-lg border border-zinc-200 bg-background shadow-lg dark:border-zinc-800";
@@ -144,7 +161,9 @@ function BrandPanel({ query, brands, apply }: { query: PartsQuery; brands: strin
     event.preventDefault();
     // Typing then pressing Enter means the top match, unless a brand that's still listed was clicked.
     const clicked = selected && shown.includes(selected) ? selected : null;
-    apply({ brand: clicked ?? (term ? (shown[0] ?? null) : selected) });
+    const brand = clicked ?? (term ? (shown[0] ?? null) : selected);
+    // A model from another brand would match nothing, so changing brand clears it.
+    apply(brand === query.brand ? { brand } : { brand, model: null });
   }
 
   return (
@@ -176,6 +195,93 @@ function BrandPanel({ query, brands, apply }: { query: PartsQuery; brands: strin
         {shown.length === 0 && <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.noOptions")}</li>}
       </ul>
       <PanelFooter onClear={() => apply({ brand: null })} />
+    </form>
+  );
+}
+
+type ModelOption = { id: number; label: string };
+
+function ModelPanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
+  const { t } = useI18n();
+  const [search, setSearch] = useState("");
+  const [options, setOptions] = useState<ModelOption[] | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [selected, setSelected] = useState(query.model);
+  const request = useRef<AbortController>(undefined);
+
+  const load = useCallback(
+    async (offset: number) => {
+      // A new search replaces whatever was still loading, so old results can't land on top of it.
+      request.current?.abort();
+      const controller = new AbortController();
+      request.current = controller;
+      const params = new URLSearchParams({ q: search.trim(), offset: String(offset) });
+      if (query.brand) params.set("brand", query.brand);
+      try {
+        const response = await fetch(`/api/car-models?${params}`, { signal: controller.signal });
+        const page: ModelOption[] = await response.json();
+        setOptions((current) => (offset === 0 ? page : [...(current ?? []), ...page]));
+        setHasMore(page.length === MODELS_PAGE_SIZE);
+        setLoadingMore(false);
+      } catch (error) {
+        if (!controller.signal.aborted) throw error;
+      }
+    },
+    [search, query.brand],
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => load(0), SEARCH_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+      request.current?.abort();
+    };
+  }, [load]);
+
+  function loadMoreNearBottom(event: UIEvent<HTMLUListElement>) {
+    const { scrollTop, clientHeight, scrollHeight } = event.currentTarget;
+    if (!hasMore || loadingMore || scrollHeight - scrollTop - clientHeight > LOAD_MORE_DISTANCE_PX) return;
+    setLoadingMore(true);
+    load(options?.length ?? 0);
+  }
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const listed = options?.some((option) => option.id === selected);
+    apply({ model: listed || !search.trim() ? selected : (options?.[0]?.id ?? null), category: null });
+  }
+
+  return (
+    <form onSubmit={submit} className={PANEL}>
+      <div className="p-2">
+        <input
+          type="search"
+          autoFocus
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t("filters.chooseOption")}
+          aria-label={t("filters.model")}
+          className="h-9 w-full rounded-md border border-zinc-300 bg-transparent px-3 text-sm outline-none focus:border-accent dark:border-zinc-700"
+        />
+      </div>
+      <ul onScroll={loadMoreNearBottom} className="max-h-80 min-h-10 overflow-y-auto">
+        {options?.map((option) => (
+          <li key={option.id}>
+            <button
+              type="button"
+              onClick={() => setSelected(option.id)}
+              aria-pressed={option.id === selected}
+              className="w-full px-3 py-1.5 text-left text-sm hover:bg-zinc-100 aria-pressed:bg-zinc-100 aria-pressed:font-medium aria-pressed:text-accent-text dark:hover:bg-zinc-900 dark:aria-pressed:bg-zinc-900"
+            >
+              {option.label}
+            </button>
+          </li>
+        ))}
+        {options?.length === 0 && <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.noOptions")}</li>}
+        {loadingMore && <li className="px-3 py-2 text-sm text-zinc-500">{t("filters.loading")}</li>}
+      </ul>
+      <PanelFooter onClear={() => apply({ model: null, category: null })} />
     </form>
   );
 }
@@ -272,7 +378,9 @@ function priceSummary({ priceMin, priceMax, noPrice }: PartsQuery, noPriceLabel:
   return undefined;
 }
 
-export function PartsFilters({ query, brands }: { query: PartsQuery; brands: string[] }) {
+type FiltersProps = { query: PartsQuery; brands: string[]; modelLabel: string | null };
+
+export function PartsFilters({ query, brands, modelLabel }: FiltersProps) {
   const i18n = useI18n();
   const { t } = i18n;
   const router = useRouter();
@@ -309,6 +417,8 @@ export function PartsFilters({ query, brands }: { query: PartsQuery; brands: str
   const showStatus = query.statuses.length > 0 || open === "status";
   const showPrice = priceValueText !== undefined || open === "price";
   const showBrand = query.brand !== null || open === "brand";
+  // With a category too, this came from a "Sandėlyje" link, which has its own label above the table.
+  const showModel = (query.model !== null && query.category === null) || open === "model";
 
   return (
     <div ref={root} className="relative flex flex-wrap items-center gap-2">
@@ -343,6 +453,17 @@ export function PartsFilters({ query, brands }: { query: PartsQuery; brands: str
           onRemove={() => apply({ brand: null })}
         >
           <BrandPanel query={query} brands={brands} apply={apply} />
+        </FilterChip>
+      )}
+      {showModel && (
+        <FilterChip
+          label={t("filters.model")}
+          value={modelLabel ?? undefined}
+          open={open === "model"}
+          onToggle={() => toggle("model")}
+          onRemove={() => apply({ model: null })}
+        >
+          <ModelPanel query={query} apply={apply} />
         </FilterChip>
       )}
       <div className="md:relative">

@@ -3,6 +3,9 @@
 
 export const PAGE_SIZES = [30, 50, 100] as const;
 
+/** How many models the filter loads at a time as it scrolls. */
+export const MODELS_PAGE_SIZE = 50;
+
 export const PART_STATUSES = [
   "in_stock",
   "reserved",
