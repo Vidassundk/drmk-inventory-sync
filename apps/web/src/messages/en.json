@@ -119,5 +119,7 @@
   "cars.color": "Colour",
   "cars.bodyType": "Body type",
   "filters.fuel": "Fuel",
-  "filters.gearbox": "Gearbox"
+  "filters.gearbox": "Gearbox",
+  "filters.from": "From",
+  "filters.to": "To"
 }

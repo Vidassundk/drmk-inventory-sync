@@ -7,6 +7,8 @@ import {
   CheckPanel,
   FilterChip,
   ListPanel,
+  RangePanel,
+  rangeSummary,
   RemoteOptionsPanel,
   useDismiss,
 } from "@/components/filter-ui";
@@ -14,27 +16,44 @@ import { useI18n } from "@/components/i18n-provider";
 import type { CarFilterOption } from "@/lib/cars";
 import { carsHref, clearedCarFiltersHref, hasCarFilters, type CarsQuery } from "@/lib/cars-query";
 
-type Filter = "brand" | "model" | "fuel" | "gearbox";
-const FILTERS: Filter[] = ["brand", "model", "fuel", "gearbox"];
+type Filter = "brand" | "model" | "fuel" | "gearbox" | "wheelDrive" | "steering" | "power" | "engineCc";
+const FILTERS: Filter[] = ["brand", "model", "fuel", "gearbox", "wheelDrive", "steering", "power", "engineCc"];
 const FILTER_LABELS = {
   brand: "filters.brand",
   model: "filters.model",
   fuel: "filters.fuel",
   gearbox: "filters.gearbox",
+  wheelDrive: "cars.wheelDrive",
+  steering: "cars.steering",
+  power: "cars.power",
+  engineCc: "cars.engineCc",
 } as const;
+
+/** Tick-box filters: which query field each one sets, and which list of options it offers. */
+type ListFilter = "fuel" | "gearbox" | "wheelDrive" | "steering";
+const LIST_FILTERS = {
+  fuel: { field: "fuels", options: "fuels" },
+  gearbox: { field: "gearboxes", options: "gearboxes" },
+  wheelDrive: { field: "wheelDrives", options: "wheelDrives" },
+  steering: { field: "steerings", options: "steerings" },
+} as const satisfies Record<ListFilter, { field: keyof CarsQuery; options: string }>;
 
 type Props = {
   query: CarsQuery;
-  brands: string[];
-  fuels: CarFilterOption[];
-  gearboxes: CarFilterOption[];
+  options: {
+    brands: string[];
+    fuels: CarFilterOption[];
+    gearboxes: CarFilterOption[];
+    wheelDrives: CarFilterOption[];
+    steerings: CarFilterOption[];
+  };
   modelLabel: string | null;
 };
 
 const labelsOf = (options: CarFilterOption[], values: string[]) =>
   values.map((value) => options.find((option) => option.value === value)?.label ?? value).join(", ") || undefined;
 
-export function CarsFilters({ query, brands, fuels, gearboxes, modelLabel }: Props) {
+export function CarsFilters({ query, options, modelLabel }: Props) {
   const { t } = useI18n();
   const router = useRouter();
   const root = useRef<HTMLDivElement>(null);
@@ -65,7 +84,7 @@ export function CarsFilters({ query, brands, fuels, gearboxes, modelLabel }: Pro
           onRemove={() => apply({ brand: null })}
         >
           <ListPanel
-            options={brands}
+            options={options.brands}
             initial={query.brand}
             label={t("filters.brand")}
             // A model from another brand would match nothing, so changing brand clears it.
@@ -92,37 +111,59 @@ export function CarsFilters({ query, brands, fuels, gearboxes, modelLabel }: Pro
           />
         </FilterChip>
       )}
-      {(query.fuels.length > 0 || open === "fuel") && (
+      {(Object.keys(LIST_FILTERS) as ListFilter[]).map((filter) => {
+        const { field, options: optionsKey } = LIST_FILTERS[filter];
+        const choices = options[optionsKey];
+        const selected = query[field];
+        if (selected.length === 0 && open !== filter) return null;
+        return (
+          <FilterChip
+            key={filter}
+            label={t(FILTER_LABELS[filter])}
+            value={labelsOf(choices, selected)}
+            open={open === filter}
+            onToggle={() => toggle(filter)}
+            onRemove={() => apply({ [field]: [] })}
+          >
+            <CheckPanel
+              options={choices.map((option) => option.value)}
+              initial={selected}
+              labelOf={labelOf(choices)}
+              onApply={(values) => apply({ [field]: values })}
+              onClear={() => apply({ [field]: [] })}
+            />
+          </FilterChip>
+        );
+      })}
+      {(query.powerMin !== null || query.powerMax !== null || open === "power") && (
         <FilterChip
-          label={t("filters.fuel")}
-          value={labelsOf(fuels, query.fuels)}
-          open={open === "fuel"}
-          onToggle={() => toggle("fuel")}
-          onRemove={() => apply({ fuels: [] })}
+          label={t("cars.power")}
+          value={rangeSummary({ min: query.powerMin, max: query.powerMax }, "kW")}
+          open={open === "power"}
+          onToggle={() => toggle("power")}
+          onRemove={() => apply({ powerMin: null, powerMax: null })}
         >
-          <CheckPanel
-            options={fuels.map((option) => option.value)}
-            initial={query.fuels}
-            labelOf={labelOf(fuels)}
-            onApply={(selected) => apply({ fuels: selected })}
-            onClear={() => apply({ fuels: [] })}
+          <RangePanel
+            unit="kW"
+            initial={{ min: query.powerMin, max: query.powerMax }}
+            onApply={({ min, max }) => apply({ powerMin: min, powerMax: max })}
+            onClear={() => apply({ powerMin: null, powerMax: null })}
           />
         </FilterChip>
       )}
-      {(query.gearboxes.length > 0 || open === "gearbox") && (
+      {(query.engineCcMin !== null || query.engineCcMax !== null || open === "engineCc") && (
         <FilterChip
-          label={t("filters.gearbox")}
-          value={labelsOf(gearboxes, query.gearboxes)}
-          open={open === "gearbox"}
-          onToggle={() => toggle("gearbox")}
-          onRemove={() => apply({ gearboxes: [] })}
+          label={t("cars.engineCc")}
+          value={rangeSummary({ min: query.engineCcMin, max: query.engineCcMax }, "cm³")}
+          open={open === "engineCc"}
+          onToggle={() => toggle("engineCc")}
+          onRemove={() => apply({ engineCcMin: null, engineCcMax: null })}
         >
-          <CheckPanel
-            options={gearboxes.map((option) => option.value)}
-            initial={query.gearboxes}
-            labelOf={labelOf(gearboxes)}
-            onApply={(selected) => apply({ gearboxes: selected })}
-            onClear={() => apply({ gearboxes: [] })}
+          <RangePanel
+            unit="cm³"
+            initial={{ min: query.engineCcMin, max: query.engineCcMax }}
+            onApply={({ min, max }) => apply({ engineCcMin: min, engineCcMax: max })}
+            onClear={() => apply({ engineCcMin: null, engineCcMax: null })}
           />
         </FilterChip>
       )}

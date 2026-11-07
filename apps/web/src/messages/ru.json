@@ -119,5 +119,7 @@
   "cars.color": "Цвет",
   "cars.bodyType": "Тип кузова",
   "filters.fuel": "Топливо",
-  "filters.gearbox": "Коробка передач"
+  "filters.gearbox": "Коробка передач",
+  "filters.from": "От",
+  "filters.to": "До"
 }

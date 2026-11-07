@@ -40,7 +40,7 @@ The two rows that didn't match, and a few € figures, are most likely prices or
 - [ ] Car detail page (mileage, VIN, engine code and photo gallery are already synced)
 - [ ] Column settings for the cars table
 - [ ] Copy car photos to R2: they still load from Ovoko's car image server, and only 331 of 819 cars have any
-- [ ] Car columns RRR shows but the API doesn't provide: purchase date, dismantling date, status, created by
+- [ ] Car columns and filters RRR shows but the API doesn't provide: purchase date, dismantling date, status (also its filter), created by
 - [ ] Sidebar navigation like RRR's
 - [ ] "Last synced" time, so people can see how fresh the data is
 - [ ] Check our totals per status against RRR's

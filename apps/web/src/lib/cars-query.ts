@@ -10,6 +10,12 @@ export type CarsQuery = {
   /** Lithuanian values as stored, like "Dyzelinas"; the page shows them translated. Empty means all. */
   fuels: string[];
   gearboxes: string[];
+  wheelDrives: string[];
+  steerings: string[];
+  powerMin: number | null;
+  powerMax: number | null;
+  engineCcMin: number | null;
+  engineCcMax: number | null;
 };
 
 const DEFAULTS: CarsQuery = {
@@ -20,6 +26,12 @@ const DEFAULTS: CarsQuery = {
   model: null,
   fuels: [],
   gearboxes: [],
+  wheelDrives: [],
+  steerings: [],
+  powerMin: null,
+  powerMax: null,
+  engineCcMin: null,
+  engineCcMax: null,
 };
 
 type RawParams = Record<string, string | string[] | undefined>;
@@ -27,6 +39,11 @@ type RawParams = Record<string, string | string[] | undefined>;
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 const listParam = (value: string | string[] | undefined) =>
   (first(value)?.split(",") ?? []).map((item) => item.trim().slice(0, 40)).filter(Boolean);
+
+function amountParam(value: string | string[] | undefined) {
+  const amount = Number(first(value));
+  return first(value) && Number.isFinite(amount) && amount >= 0 ? amount : null;
+}
 
 export function parseCarsQuery(params: RawParams): CarsQuery {
   const page = Number(first(params.page));
@@ -40,6 +57,12 @@ export function parseCarsQuery(params: RawParams): CarsQuery {
     model: Number.isInteger(model) && model > 0 ? model : DEFAULTS.model,
     fuels: listParam(params.fuel),
     gearboxes: listParam(params.gearbox),
+    wheelDrives: listParam(params.drive),
+    steerings: listParam(params.steering),
+    powerMin: amountParam(params.powerMin),
+    powerMax: amountParam(params.powerMax),
+    engineCcMin: amountParam(params.ccMin),
+    engineCcMax: amountParam(params.ccMax),
   };
 }
 
@@ -53,12 +76,21 @@ export function carsHref(query: CarsQuery, changes: Partial<CarsQuery> = {}) {
   if (next.model) params.set("model", String(next.model));
   if (next.fuels.length > 0) params.set("fuel", next.fuels.join(","));
   if (next.gearboxes.length > 0) params.set("gearbox", next.gearboxes.join(","));
+  if (next.wheelDrives.length > 0) params.set("drive", next.wheelDrives.join(","));
+  if (next.steerings.length > 0) params.set("steering", next.steerings.join(","));
+  if (next.powerMin !== null) params.set("powerMin", String(next.powerMin));
+  if (next.powerMax !== null) params.set("powerMax", String(next.powerMax));
+  if (next.engineCcMin !== null) params.set("ccMin", String(next.engineCcMin));
+  if (next.engineCcMax !== null) params.set("ccMax", String(next.engineCcMax));
   const search = params.toString();
   return search ? `/cars?${search}` : "/cars";
 }
 
-export const hasCarFilters = ({ brand, model, fuels, gearboxes }: CarsQuery) =>
-  brand !== null || model !== null || fuels.length > 0 || gearboxes.length > 0;
+export const hasCarFilters = (query: CarsQuery) =>
+  query.brand !== null ||
+  query.model !== null ||
+  [query.fuels, query.gearboxes, query.wheelDrives, query.steerings].some((list) => list.length > 0) ||
+  [query.powerMin, query.powerMax, query.engineCcMin, query.engineCcMax].some((value) => value !== null);
 
 /** Clears every filter but keeps the search. */
 export const clearedCarFiltersHref = (query: CarsQuery) =>

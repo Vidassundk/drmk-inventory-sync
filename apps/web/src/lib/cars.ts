@@ -1,13 +1,20 @@
-import { and, count, desc, eq, inArray, isNull, parts, rrrCarModels, rrrCars, sql } from "@deremika/db";
+import { and, count, desc, eq, gte, inArray, isNull, lte, parts, rrrCarModels, rrrCars, sql } from "@deremika/db";
 import type { CarsQuery } from "./cars-query";
 import { getDb } from "./db";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
 import { carLabel, MAX_SEARCH_TERMS } from "./parts";
 
-const LABELLED_FIELDS = { fuel: rrrCars.fuel, gearbox: rrrCars.gearbox } as const;
+const LABELLED_FIELDS = {
+  fuel: rrrCars.fuel,
+  gearbox: rrrCars.gearbox,
+  wheelDrive: rrrCars.wheelDrive,
+  steering: rrrCars.steering,
+} as const;
 
-function carFilters({ q, brand, model, fuels, gearboxes }: CarsQuery) {
+function carFilters(query: CarsQuery) {
+  const { q, brand, model, fuels, gearboxes, wheelDrives, steerings } = query;
+  const { powerMin, powerMax, engineCcMin, engineCcMax } = query;
   // VIN and engine code live only in the raw payload; they're worth searching but not showing in the list.
   const text = sql`lower(concat_ws(' ', ${rrrCars.id}, ${rrrCarModels.brand}, ${rrrCarModels.name}, ${rrrCars.year},
     ${rrrCars.raw}->>'car_body_number', ${rrrCars.raw}->>'car_engine_code'))`;
@@ -18,6 +25,12 @@ function carFilters({ q, brand, model, fuels, gearboxes }: CarsQuery) {
     model ? eq(rrrCars.modelId, model) : undefined,
     fuels.length > 0 ? inArray(rrrCars.fuel, fuels) : undefined,
     gearboxes.length > 0 ? inArray(rrrCars.gearbox, gearboxes) : undefined,
+    wheelDrives.length > 0 ? inArray(rrrCars.wheelDrive, wheelDrives) : undefined,
+    steerings.length > 0 ? inArray(rrrCars.steering, steerings) : undefined,
+    powerMin !== null ? gte(rrrCars.powerKw, powerMin) : undefined,
+    powerMax !== null ? lte(rrrCars.powerKw, powerMax) : undefined,
+    engineCcMin !== null ? gte(rrrCars.engineCc, engineCcMin) : undefined,
+    engineCcMax !== null ? lte(rrrCars.engineCc, engineCcMax) : undefined,
     ...terms.map((term) => sql`${text} like ${`%${term.replace(/[\\%_]/g, "\\$&")}%`}`),
   );
 }
@@ -103,14 +116,16 @@ export async function carFilterOptions() {
       .map((row) => ({ value: row.value!, label: row.label ?? row.value! }))
       .sort((a, b) => a.label.localeCompare(b.label));
   };
-  const [fuels, gearboxes, brandRows] = await Promise.all([
+  const [fuels, gearboxes, wheelDrives, steerings, brandRows] = await Promise.all([
     options("fuel"),
     options("gearbox"),
+    options("wheelDrive"),
+    options("steering"),
     db
       .selectDistinct({ brand: rrrCarModels.brand })
       .from(rrrCars)
       .innerJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId)),
   ]);
   const brands = brandRows.map((row) => row.brand).sort((a, b) => a.localeCompare(b, "en"));
-  return { fuels, gearboxes, brands };
+  return { fuels, gearboxes, wheelDrives, steerings, brands };
 }

@@ -41,15 +41,12 @@ function CarsSkeleton() {
 export default async function CarsPage({ searchParams }: PageProps<"/cars">) {
   const { t } = await getI18n();
   const query = parseCarsQuery(await searchParams);
-  const [{ brands, fuels, gearboxes }, modelLabel] = await Promise.all([
-    carFilterOptions(),
-    carModelLabel(query.model),
-  ]);
+  const [options, modelLabel] = await Promise.all([carFilterOptions(), carModelLabel(query.model)]);
 
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 md:p-6">
       <h1 className="sr-only">{t("cars.title")}</h1>
-      <CarsFilters query={query} brands={brands} fuels={fuels} gearboxes={gearboxes} modelLabel={modelLabel} />
+      <CarsFilters query={query} options={options} modelLabel={modelLabel} />
       <Suspense key={carsHref(query)} fallback={<CarsSkeleton />}>
         <CarsResults query={query} />
       </Suspense>

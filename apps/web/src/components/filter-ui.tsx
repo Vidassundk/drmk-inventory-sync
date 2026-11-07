@@ -364,3 +364,76 @@ export function useDismiss(open: boolean, close: () => void, root: RefObject<HTM
     };
   }, [open, close, root]);
 }
+
+const numberValue = (text: string) => {
+  const value = Number(text.replace(",", "."));
+  return text.trim() !== "" && Number.isFinite(value) && value >= 0 ? value : null;
+};
+
+function RangeInput({
+  label,
+  unit,
+  value,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-md border border-zinc-300 px-2 text-sm focus-within:border-accent dark:border-zinc-700">
+      <input
+        inputMode="decimal"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={label}
+        aria-label={label}
+        className="w-full min-w-0 bg-transparent outline-none"
+      />
+      <span className="text-zinc-500">{unit}</span>
+    </label>
+  );
+}
+
+type Range = { min: number | null; max: number | null };
+
+type RangePanelProps = {
+  unit: string;
+  initial: Range;
+  onApply: (range: Range) => void;
+  onClear: () => void;
+};
+
+/** A "from – to" filter with a unit, like engine power in kW. Swapped bounds are put the right way round. */
+export function RangePanel({ unit, initial, onApply, onClear }: RangePanelProps) {
+  const { t } = useI18n();
+  const [min, setMin] = useState(initial.min?.toString() ?? "");
+  const [max, setMax] = useState(initial.max?.toString() ?? "");
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const [low, high] = [numberValue(min), numberValue(max)];
+    const swapped = low !== null && high !== null && low > high;
+    onApply({ min: swapped ? high : low, max: swapped ? low : high });
+  }
+
+  return (
+    <form onSubmit={submit} className={PANEL}>
+      <div className="flex items-center gap-2 p-3">
+        <RangeInput label={t("filters.from")} unit={unit} value={min} onChange={setMin} />
+        <span className="text-zinc-500">–</span>
+        <RangeInput label={t("filters.to")} unit={unit} value={max} onChange={setMax} />
+      </div>
+      <PanelFooter onClear={onClear} />
+    </form>
+  );
+}
+
+/** "100–200 kW", "≥ 100 kW" or "≤ 200 kW" for a filter chip. */
+export function rangeSummary({ min, max }: Range, unit: string) {
+  if (min !== null && max !== null) return `${min}–${max} ${unit}`;
+  if (min !== null) return `≥ ${min} ${unit}`;
+  if (max !== null) return `≤ ${max} ${unit}`;
+  return undefined;
+}

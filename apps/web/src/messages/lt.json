@@ -119,5 +119,7 @@
   "cars.color": "Spalva",
   "cars.bodyType": "Kėbulo tipas",
   "filters.fuel": "Kuro tipas",
-  "filters.gearbox": "Pavarų dėžė"
+  "filters.gearbox": "Pavarų dėžė",
+  "filters.from": "Nuo",
+  "filters.to": "Iki"
 }
