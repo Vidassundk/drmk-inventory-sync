@@ -78,6 +78,8 @@ export const parts = pgTable(
     index("parts_status_idx").on(t.status),
     index("parts_manufacturer_code_idx").on(t.manufacturerCode),
     index("parts_rrr_category_idx").on(t.rrrCategoryId),
+    // Per-car part counts on the cars page, and the car filter.
+    index("parts_rrr_car_idx").on(t.rrrCarId),
     // Back the newest-first list, so a page reads its rows in order instead of sorting the whole table.
     index("parts_listed_idx")
       .on(t.listedAt.desc(), t.id.desc())

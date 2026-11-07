@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { AppLink } from "@/components/app-link";
 import { PartsFilters } from "@/components/parts-filters";
-import { PartsPagination } from "@/components/parts-pagination";
+import { Pagination } from "@/components/pagination";
 import { PartsTable } from "@/components/parts-table";
 import { PartsTabs } from "@/components/parts-tabs";
 import { getI18n } from "@/lib/i18n-server";
@@ -33,7 +33,12 @@ async function PartsResults({ query, columns }: { query: PartsQuery; columns: Pa
         </p>
       )}
       <PartsTable rows={rows} columns={columns} />
-      <PartsPagination query={query} total={total} />
+      <Pagination
+        page={query.page}
+        pageSize={query.pageSize}
+        total={total}
+        hrefFor={(changes) => partsHref(query, changes)}
+      />
     </>
   );
 }

@@ -28,7 +28,7 @@ import { getI18n } from "./i18n-server";
 import { carOption, carTitle } from "./part-format";
 import type { PartsQuery } from "./parts-query";
 
-const MAX_SEARCH_TERMS = 5;
+export const MAX_SEARCH_TERMS = 5;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Fields still kept only in the raw RRR payload. They move to real columns if we need to sort or filter by them. */
@@ -53,7 +53,7 @@ const categoryPath = (locale: Locale) =>
 const partName = (locale: Locale) =>
   sql<string>`case when ${parts.name} = ${rrrCategories.name} then ${categoryName(locale)} else ${parts.name} end`;
 
-const carLabel = (locale: Locale, field: string, lithuanian: SQLWrapper) =>
+export const carLabel = (locale: Locale, field: string, lithuanian: SQLWrapper) =>
   sql<
     string | null
   >`coalesce(${rrrCars.translations}->${sql.raw(`'${locale}'`)}->>${sql.raw(`'${field}'`)}, ${lithuanian})`;

@@ -36,7 +36,11 @@ The two rows that didn't match, and a few € figures, are most likely prices or
 
 ## Pages
 
-- [ ] Cars list and car page, showing every part from a donor car
+- [x] Cars list with Likutis and Parduota counts, filters and search (by ID, car or VIN)
+- [ ] Car detail page (mileage, VIN, engine code and photo gallery are already synced)
+- [ ] Column settings for the cars table
+- [ ] Copy car photos to R2: they still load from Ovoko's car image server, and only 331 of 819 cars have any
+- [ ] Car columns RRR shows but the API doesn't provide: purchase date, dismantling date, status, created by
 - [ ] Sidebar navigation like RRR's
 - [ ] "Last synced" time, so people can see how fresh the data is
 - [ ] Check our totals per status against RRR's

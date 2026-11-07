@@ -71,6 +71,13 @@
       "when": 1794035841437,
       "tag": "0009_car_steering_gearbox",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794052945056,
+      "tag": "0010_parts_car_index",
+      "breakpoints": true
     }
   ]
 }

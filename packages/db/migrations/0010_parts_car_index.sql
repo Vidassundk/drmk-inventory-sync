@@ -1,0 +1,1 @@
+CREATE INDEX "parts_rrr_car_idx" ON "parts" USING btree ("rrr_car_id");
