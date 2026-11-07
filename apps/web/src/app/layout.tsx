@@ -36,7 +36,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang={locale} data-theme={theme} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale}>
-          <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-zinc-200 px-4 py-3.5 md:px-6 dark:border-zinc-800">
+          <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 md:gap-x-6 border-b border-zinc-200 px-4 py-3.5 md:px-6 dark:border-zinc-800">
             <AppLink href="/parts" className="flex items-center gap-3">
               <Logo className="h-6 w-auto" />
               <span className="text-sm text-zinc-500">{t("app.title")}</span>
