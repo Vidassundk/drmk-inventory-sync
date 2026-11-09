@@ -1,6 +1,8 @@
 # web
 
-The dashboard at `stock.deremika.lt`: Next.js 16 on Cloudflare Workers, through the OpenNext adapter. It reads the backup from Postgres and has its own invite-only sign-in.
+The dashboard: Next.js 16 on Cloudflare Workers, through the OpenNext adapter. It reads the backup from Postgres and has its own invite-only sign-in.
+
+Its name, logo, domains and email sender come from `brand.local/`, which is gitignored, so the repo carries no brand. Without that folder it uses the neutral defaults in [`brand.example/`](brand.example/README.md).
 
 ## Layout
 
@@ -36,7 +38,7 @@ The preview also needs the database. Export `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECT
 pnpm web:deploy
 ```
 
-This builds, removes every `.env` value from the build, checks none is left, and deploys. OpenNext copies `.env` files from this folder and the repo root into the Worker, and the root one holds the sync jobs' secrets. Don't deploy with `wrangler deploy` directly.
+This builds, removes every `.env` value from the build, checks none is left, and deploys to the domains in `brand.local/brand.json`. OpenNext copies `.env` files from this folder and the repo root into the Worker, and the root one holds the sync jobs' secrets. Don't deploy with `wrangler deploy` directly.
 
 The Worker's own secrets, set once from this folder:
 
@@ -48,7 +50,7 @@ npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put RESEND_API_KEY
 ```
 
-Emails go out from `prisijungimas@deremika.lt`, a domain verified in Resend. To use another sender, set `EMAIL_FROM` in `wrangler.jsonc`.
+Emails go out from the brand's `emailFrom`, on a domain verified in Resend. `EMAIL_FROM` as a Worker variable overrides it.
 
 ## Sign-in
 

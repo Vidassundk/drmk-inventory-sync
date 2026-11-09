@@ -3,6 +3,7 @@
 import en from "@/messages/en.json";
 import lt from "@/messages/lt.json";
 import ru from "@/messages/ru.json";
+import { BRAND_NAME } from "./brand";
 
 export const LOCALES = ["lt", "en", "ru"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -24,9 +25,11 @@ export function createI18n(locale: Locale) {
   const intlLocale = INTL_LOCALES[locale];
   const plurals = new Intl.PluralRules(intlLocale);
 
-  /** A message with its {placeholders} filled in. */
-  const t = (key: MessageKey, values: Values = {}) =>
-    messages[key].replace(/\{(\w+)\}/g, (_, name: string) => String(values[name]));
+  /** A message with its {placeholders} filled in. {brand} is always the brand's name. */
+  const t = (key: MessageKey, values: Values = {}) => {
+    const filled: Values = { brand: BRAND_NAME, ...values };
+    return messages[key].replace(/\{(\w+)\}/g, (_, name: string) => String(filled[name]));
+  };
 
   return {
     locale,

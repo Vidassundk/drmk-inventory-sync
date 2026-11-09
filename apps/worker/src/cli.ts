@@ -1,6 +1,6 @@
 // Usage: node src/cli.ts <rrr:full | rrr:incremental | rrr:cars [all] | images:rehost [limit]>
-import { createDb, type Db } from "@deremika/db";
-import { rrrClientFromEnv } from "@deremika/rrr-client";
+import { createDb, type Db } from "@drmk/db";
+import { rrrClientFromEnv } from "@drmk/rrr-client";
 import { rehostImages } from "./images/rehost.ts";
 import { syncRrrCars } from "./rrr/cars.ts";
 import { syncRrrFull, syncRrrIncremental } from "./rrr/sync.ts";

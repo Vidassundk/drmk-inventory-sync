@@ -26,9 +26,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@deremika/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -38,6 +35,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.3.0)
+      '@drmk/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@opennextjs/cloudflare':
         specifier: ^1.20.16
         version: 1.20.16(next@16.4.5(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.157.0(@cloudflare/workers-types@5.20261104.1)(@types/node@20.19.43))
@@ -87,10 +87,10 @@ importers:
 
   apps/worker:
     dependencies:
-      '@deremika/db':
+      '@drmk/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@deremika/rrr-client':
+      '@drmk/rrr-client':
         specifier: workspace:*
         version: link:../../packages/rrr-client
       aws4fetch:

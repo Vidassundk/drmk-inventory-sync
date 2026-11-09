@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
-import type { Db } from "@deremika/db";
+import type { Db } from "@drmk/db";
 import { getAuth } from "./auth";
 import { getDb } from "./db";
 

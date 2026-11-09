@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { I18nProvider } from "@/components/i18n-provider";
+import { BRAND_NAME } from "@/lib/brand";
 import { getI18n } from "@/lib/i18n-server";
 import { parseTheme, THEME_COOKIE } from "@/lib/theme";
 import "./globals.css";
@@ -18,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
-  return { title: "Deremika", description: t("app.description") };
+  return { title: BRAND_NAME, description: t("app.description") };
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

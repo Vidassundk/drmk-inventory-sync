@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { authUsers, desc } from "@deremika/db";
+import { authUsers, desc } from "@drmk/db";
 import { InviteForm } from "@/components/invite-form";
 import { UserActions } from "@/components/user-actions";
 import { getDb } from "@/lib/db";

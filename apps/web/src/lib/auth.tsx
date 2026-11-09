@@ -5,7 +5,7 @@ import { emailOTP } from "better-auth/plugins";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { headers } from "next/headers";
 import { cache } from "react";
-import { authAccounts, authRateLimits, authSessions, authUsers, authVerifications, eq } from "@deremika/db";
+import { authAccounts, authRateLimits, authSessions, authUsers, authVerifications, eq } from "@drmk/db";
 import { SignInCodeEmail } from "@/emails/sign-in-code-email";
 import { getDb } from "./db";
 import { sendEmail } from "./email";
@@ -77,7 +77,7 @@ export const getAuth = cache(async () => {
       modelName: "authRateLimits",
     },
     advanced: {
-      cookiePrefix: "deremika",
+      cookiePrefix: "drmk",
       // Set by Cloudflare itself, replacing anything the visitor sends.
       ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
       backgroundTasks: { handler: inBackground },

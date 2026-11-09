@@ -49,12 +49,12 @@ The two rows that didn't match, and a few € figures, are most likely prices or
 
 Invite-only sign-in with emailed codes, built to replace Cloudflare Access.
 
-- [x] Resend: `deremika.lt` added as a sending domain, with its DNS records in Cloudflare
+- [x] Resend: the brand's domain added as a sending domain, with its DNS records in Cloudflare
 - [x] Worker secrets: `BETTER_AUTH_SECRET` and `RESEND_API_KEY`
 - [x] Admin Users page: invite, resend, remove
 - [x] Non-admins don't see reservations or parts without a price
 - [ ] Deploy, sign in as the first admin, and invite the team
-- [ ] Once sign-in works on `stock.deremika.lt`, remove Cloudflare Access from it, then retire `app.vidasstirbys.com`
+- [ ] Once sign-in works on the new domain, remove Cloudflare Access from it, then retire `app.vidasstirbys.com`
 - [ ] A customer role for outside guests: in-stock parts only, without internal notes, creator or car statistics
 - [ ] Change someone's role from the Users page (only at invite time now)
 - [ ] After sign-in, return to the page that was asked for instead of always the parts list

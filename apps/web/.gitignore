@@ -44,3 +44,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# the brand: name, logo, domains and email sender (see brand.example/)
+/brand.local/

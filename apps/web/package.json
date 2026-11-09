@@ -8,10 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "preview": "opennextjs-cloudflare build && node scripts/strip-build-env.mjs && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && node scripts/strip-build-env.mjs && opennextjs-cloudflare deploy"
+    "deploy": "opennextjs-cloudflare build && node scripts/strip-build-env.mjs && node scripts/deploy.mjs"
   },
   "dependencies": {
-    "@deremika/db": "workspace:*",
+    "@drmk/db": "workspace:*",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

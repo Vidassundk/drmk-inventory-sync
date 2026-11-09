@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
-import { rrrCarModels, rrrCars, rrrCategories, type Db } from "@deremika/db";
-import type { RrrCar, RrrCategory, RrrClient, RrrLookup, RrrNames } from "@deremika/rrr-client";
+import { rrrCarModels, rrrCars, rrrCategories, type Db } from "@drmk/db";
+import type { RrrCar, RrrCategory, RrrClient, RrrLookup, RrrNames } from "@drmk/rrr-client";
 import { exclusive } from "../lock.ts";
 import { withRetry } from "./sync.ts";
 

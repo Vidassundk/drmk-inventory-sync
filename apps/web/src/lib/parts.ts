@@ -21,7 +21,7 @@ import {
   rrrCategories,
   sql,
   type SQLWrapper,
-} from "@deremika/db";
+} from "@drmk/db";
 import { dataDb, viewerIsAdmin } from "./session";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";

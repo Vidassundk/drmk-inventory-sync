@@ -1,9 +1,9 @@
-# @deremika/rrr-client
+# @drmk/rrr-client
 
 A typed client for the RRR API. API docs: <https://api.rrr.lt/docs/>
 
 ```ts
-import { rrrClientFromEnv } from "@deremika/rrr-client";
+import { rrrClientFromEnv } from "@drmk/rrr-client";
 
 const rrr = rrrClientFromEnv(); // reads RRR_USERNAME, RRR_PASSWORD, RRR_USER_TOKEN
 

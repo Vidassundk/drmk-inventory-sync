@@ -1,5 +1,5 @@
 {
-  "name": "deremika",
+  "name": "drmk-inventory-sync",
   "private": true,
   "packageManager": "pnpm@11.1.2",
   "engines": {
@@ -11,12 +11,12 @@
     "web:deploy": "pnpm --filter web run deploy",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "smoke:rrr": "pnpm --filter @deremika/rrr-client smoke",
+    "smoke:rrr": "pnpm --filter @drmk/rrr-client smoke",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:generate": "pnpm --filter @deremika/db generate",
-    "db:migrate": "pnpm --filter @deremika/db migrate",
-    "db:studio": "pnpm --filter @deremika/db studio",
+    "db:generate": "pnpm --filter @drmk/db generate",
+    "db:migrate": "pnpm --filter @drmk/db migrate",
+    "db:studio": "pnpm --filter @drmk/db studio",
     "users:add": "node --env-file-if-exists=.env packages/db/scripts/add-user.ts",
     "sync:full": "pnpm --filter worker sync:full",
     "sync:incremental": "pnpm --filter worker sync:incremental",

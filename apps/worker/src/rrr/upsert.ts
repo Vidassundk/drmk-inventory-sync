@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
-import { images, partImages, partListings, parts, type Db } from "@deremika/db";
-import type { RrrPart } from "@deremika/rrr-client";
+import { images, partImages, partListings, parts, type Db } from "@drmk/db";
+import type { RrrPart } from "@drmk/rrr-client";
 import { contentHash, externalUpdatedAt, galleryUrls, partValues, stablePayload } from "./map.ts";
 
 export type PageStats = { inserted: number; updated: number; unchanged: number; unknownStatus: Record<string, number> };

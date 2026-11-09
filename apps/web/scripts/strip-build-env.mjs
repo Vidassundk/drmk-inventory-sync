@@ -18,7 +18,7 @@ if (!existsSync(envModule)) {
 writeFileSync(envModule, ["production", "development", "test"].map((mode) => `export const ${mode} = {};\n`).join(""));
 
 // Every secret-looking value from the .env files, to search the build for. Short values are skipped: the RRR
-// username is "deremika", which is all over the code.
+// username can be an ordinary word that also appears in the code.
 const secrets = [new URL("../../../.env", import.meta.url).pathname, new URL("../.env", import.meta.url).pathname]
   .filter(existsSync)
   .flatMap((file) => Object.entries(parseEnv(readFileSync(file, "utf8"))))

@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { authUsers, eq, type UserRole } from "@deremika/db";
+import { authUsers, eq, type UserRole } from "@drmk/db";
 import { InviteEmail } from "@/emails/invite-email";
 import { getDb } from "@/lib/db";
 import { sendEmail } from "@/lib/email";

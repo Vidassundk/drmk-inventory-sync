@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BRAND_NAME } from "@/lib/brand";
 
 // Email clients ignore stylesheets and most modern CSS, so everything here is inline styles and tables.
 const ACCENT = "#ae1f27";
@@ -60,10 +61,20 @@ export function EmailLayout({
                   <tbody>
                     <tr>
                       <td style={{ padding: "0 4px 16px" }}>
-                        <span style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "1px", color: "#171717" }}>
-                          DEREMIKA
+                        {/* The underline follows the name's width, like the logo's red mark. */}
+                        <span
+                          style={{
+                            display: "inline-block",
+                            paddingBottom: "2px",
+                            borderBottom: `3px solid ${ACCENT}`,
+                            fontSize: "20px",
+                            fontWeight: 800,
+                            letterSpacing: "1px",
+                            color: "#171717",
+                          }}
+                        >
+                          {BRAND_NAME.toUpperCase()}
                         </span>
-                        <div style={{ width: "112px", height: "3px", marginTop: "2px", backgroundColor: ACCENT }} />
                       </td>
                     </tr>
                     <tr>

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { and, count, desc, eq, gte, inArray, isNull, lte, parts, rrrCarModels, rrrCars, sql } from "@deremika/db";
+import { and, count, desc, eq, gte, inArray, isNull, lte, parts, rrrCarModels, rrrCars, sql } from "@drmk/db";
 import type { CarsQuery } from "./cars-query";
 import { dataDb, viewerIsAdmin } from "./session";
 import type { Locale } from "./i18n";

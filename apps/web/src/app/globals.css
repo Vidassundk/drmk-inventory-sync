@@ -15,7 +15,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  /* The red from the Deremika logo. Text gets its own value, because this red is too dark to read on black. */
+  /* The accent red, from the logo. Text gets its own value, because this red is too dark to read on black. */
   --accent: #ae1f27;
   --accent-text: #ae1f27;
   /* Secondary text and labels use the main text colour, so nothing is hard to read. */

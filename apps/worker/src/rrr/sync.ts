@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
-import { partListings, parts, syncRuns, type Db } from "@deremika/db";
-import type { GetPartsParams, RrrClient, RrrPart } from "@deremika/rrr-client";
+import { partListings, parts, syncRuns, type Db } from "@drmk/db";
+import type { GetPartsParams, RrrClient, RrrPart } from "@drmk/rrr-client";
 import { exclusive } from "../lock.ts";
 import { externalUpdatedAt } from "./map.ts";
 import { upsertRrrPage, type PageStats } from "./upsert.ts";

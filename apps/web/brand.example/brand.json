@@ -1,0 +1,6 @@
+{
+  "name": "drmk",
+  "domains": ["stock.example.com"],
+  "emailFrom": "drmk <sign-in@example.com>",
+  "logo": "logo.svg"
+}

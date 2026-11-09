@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { imageSize } from "image-size";
-import { images, partImages, parts, type Db } from "@deremika/db";
+import { images, partImages, parts, type Db } from "@drmk/db";
 import { exclusive } from "../lock.ts";
 import type { R2 } from "../storage/r2.ts";
 

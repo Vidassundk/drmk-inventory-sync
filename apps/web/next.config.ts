@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
@@ -16,8 +16,26 @@ function loadRootEnvForDev() {
   }
 }
 
+/**
+ * The brand: name, logo, domains and email sender. They live in brand.local/ (gitignored), so the repo carries none;
+ * without it, brand.example/ supplies neutral defaults. Read here and inlined into the code at build time, because a
+ * Worker can't read files. See brand.example/README.md.
+ */
+function readBrand(): Record<string, string> {
+  const local = new URL("./brand.local/", import.meta.url);
+  const dir = existsSync(new URL("brand.json", local)) ? local : new URL("./brand.example/", import.meta.url);
+  const brand = JSON.parse(readFileSync(new URL("brand.json", dir), "utf8"));
+  return {
+    BRAND_NAME: brand.name,
+    BRAND_LOGO_SVG: brand.logo ? readFileSync(new URL(brand.logo, dir), "utf8") : "",
+    BRAND_EMAIL_FROM: brand.emailFrom ?? "",
+    BRAND_DOMAINS: JSON.stringify(brand.domains ?? []),
+  };
+}
+
 const nextConfig: NextConfig = {
-  transpilePackages: ["@deremika/db"],
+  transpilePackages: ["@drmk/db"],
+  env: readBrand(),
   // cacheComponents and partialPrefetching stay off: pages hang in the Cloudflare Workers runtime with them on.
   turbopack: {
     rules: {

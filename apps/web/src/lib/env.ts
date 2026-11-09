@@ -1,4 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { BRAND_DOMAINS } from "./brand";
 
 type Setting = "BETTER_AUTH_SECRET" | "RESEND_API_KEY" | "EMAIL_FROM" | "EMAIL_LOG_ONLY";
 
@@ -8,10 +9,9 @@ export function serverEnv(name: Setting): string | undefined {
   return env[name] || process.env[name] || undefined;
 }
 
-/** The addresses the dashboard is served from. Links in emails only ever point at one of these. */
+/** The addresses the dashboard is served from: the brand's domains, then local runs. Links in emails only ever point at one of these. */
 export const SITE_ORIGINS = [
-  "https://stock.deremika.lt",
-  "https://app.vidasstirbys.com",
+  ...BRAND_DOMAINS.map((domain) => `https://${domain}`),
   "http://localhost:3000",
   "http://localhost:8797",
 ];

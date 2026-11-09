@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import type { parts } from "@deremika/db";
-import type { RrrPart } from "@deremika/rrr-client";
+import type { parts } from "@drmk/db";
+import type { RrrPart } from "@drmk/rrr-client";
 
 type PartStatus = (typeof parts.$inferInsert)["status"];
 

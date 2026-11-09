@@ -1,9 +1,9 @@
-# @deremika/db
+# @drmk/db
 
 The Drizzle schema, migrations and database client, for Supabase Postgres.
 
 ```ts
-import { createDb, parts } from "@deremika/db";
+import { createDb, parts } from "@drmk/db";
 
 const { db, client } = createDb(); // reads DATABASE_URL
 const rows = await db.select().from(parts).limit(10);

@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { after } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { createDb } from "@deremika/db";
+import { createDb } from "@drmk/db";
 
 /** One client per request: Workers can't share a connection between requests. Hyperdrive does the pooling. */
 export const getDb = cache(() => {

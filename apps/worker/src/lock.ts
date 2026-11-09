@@ -1,4 +1,4 @@
-import type { Db } from "@deremika/db";
+import type { Db } from "@drmk/db";
 
 /** Runs `fn` under a session advisory lock so two runs of the same job never overlap. */
 export async function exclusive<T>(client: Db["$client"], key: string, fn: () => Promise<T>): Promise<T> {

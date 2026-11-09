@@ -1,6 +1,6 @@
 # drmk-inventory-sync
 
-An ever-updating backup of Deremika's auto-parts inventory on RRR (rrr.lt / Ovoko), with a dashboard to browse it. Every part, donor car and photo is copied into our own database and storage every 15 minutes, so the data is ours even if RRR is down or we move elsewhere. The dashboard is invite-only: admins invite team members and guests by email, and decide who sees what.
+An ever-updating backup of a used auto-parts inventory on RRR (rrr.lt / Ovoko), with a dashboard to browse it. Every part, donor car and photo is copied into our own database and storage every 15 minutes, so the data is ours even if RRR is down or we move elsewhere. The dashboard is invite-only: admins invite team members and guests by email, and decide who sees what.
 
 ![Parts list](docs/screenshots/parts.png)
 
@@ -21,7 +21,7 @@ An ever-updating backup of Deremika's auto-parts inventory on RRR (rrr.lt / Ovok
 | **Sign-in email**                            |                                                |
 | ![Sign-in email](docs/screenshots/email.png) |                                                |
 
-The screenshots use placeholder people, and staff names are hidden.
+The screenshots use the neutral "drmk" brand and placeholder people, and staff names are hidden.
 
 ## How it fits together
 
@@ -34,7 +34,7 @@ GitHub Actions ── runs ──▶ apps/worker
                             ├─ writes them to Supabase Postgres
                             └─ copies photos from Ovoko to Cloudflare R2
 
-Cloudflare Worker (apps/web), stock.deremika.lt
+Cloudflare Worker (apps/web), on the brand's own domain
   ├─ reads Postgres through Hyperdrive
   ├─ shows photos from R2
   └─ signs people in, with codes sent through Resend
@@ -62,7 +62,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Fill in `.env`. It is gitignored, so credentials never reach the repo. Then check the RRR connection:
+Fill in `.env`. It is gitignored, so credentials never reach the repo. The dashboard's name, logo, domains and email sender aren't in the repo either: see [the brand folder](apps/web/brand.example/README.md). Then check the RRR connection:
 
 ```bash
 pnpm smoke:rrr
@@ -134,6 +134,7 @@ Any of them can also be started by hand from the repo's Actions tab.
 | `.env`                                | Everything in `.env.example`, for local runs                                                                                                                     |
 | GitHub → Settings → Secrets → Actions | `DATABASE_URL`, `RRR_USERNAME`, `RRR_PASSWORD`, `RRR_USER_TOKEN`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` |
 | Cloudflare Worker `drmk-web`          | `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, set with `wrangler secret put`. The database comes through Hyperdrive                                                    |
+| `apps/web/brand.local/` (gitignored)  | The brand: name, logo, domains and email sender. Not secret, just kept out of the repo                                                                           |
 | Cloudflare Worker `drmk-scheduler`    | `GITHUB_TOKEN`                                                                                                                                                   |
 
 This repo is public, and so are its Actions logs. Don't commit credentials or print part data in job output.
