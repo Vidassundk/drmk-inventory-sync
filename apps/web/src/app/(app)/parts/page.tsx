@@ -7,9 +7,16 @@ import { Pagination } from "@/components/pagination";
 import { PartsTable } from "@/components/parts-table";
 import { PartsTabs } from "@/components/parts-tabs";
 import { getI18n } from "@/lib/i18n-server";
-import { COLUMNS_COOKIE, parseColumnSettings, visibleColumns, type PartColumnKey } from "@/lib/part-columns";
+import {
+  columnSettingsFor,
+  COLUMNS_COOKIE,
+  parseColumnSettings,
+  visibleColumns,
+  type PartColumnKey,
+} from "@/lib/part-columns";
 import { carLabelFor, carModelLabel, listCarBrands, listParts, similarFilterLabel } from "@/lib/parts";
-import { parsePartsQuery, partsHref, type PartsQuery } from "@/lib/parts-query";
+import { parsePartsQuery, partsHref, queryFor, type PartsQuery } from "@/lib/parts-query";
+import { viewerIsAdmin } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -55,9 +62,10 @@ function PartsSkeleton() {
 
 export default async function PartsPage({ searchParams }: PageProps<"/parts">) {
   const { t } = await getI18n();
-  const query = parsePartsQuery(await searchParams);
+  const admin = await viewerIsAdmin();
+  const query = queryFor(parsePartsQuery(await searchParams), admin);
   // Column choices live in a cookie, so the server renders the right table with no flash of the default one.
-  const settings = parseColumnSettings((await cookies()).get(COLUMNS_COOKIE)?.value);
+  const settings = columnSettingsFor(parseColumnSettings((await cookies()).get(COLUMNS_COOKIE)?.value), admin);
   const [brands, modelLabel, carLabel] = await Promise.all([
     listCarBrands(),
     carModelLabel(query.model),
@@ -68,8 +76,15 @@ export default async function PartsPage({ searchParams }: PageProps<"/parts">) {
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 md:p-6">
       <h1 className="text-2xl font-semibold">{t("parts.title")}</h1>
-      <PartsTabs query={query} />
-      <PartsFilters query={query} brands={brands} modelLabel={modelLabel} carLabel={carLabel} settings={settings} />
+      <PartsTabs query={query} admin={admin} />
+      <PartsFilters
+        query={query}
+        brands={brands}
+        modelLabel={modelLabel}
+        carLabel={carLabel}
+        settings={settings}
+        admin={admin}
+      />
       <Suspense key={partsHref(query)} fallback={<PartsSkeleton />}>
         <PartsResults query={query} columns={visibleColumns(settings)} />
       </Suspense>

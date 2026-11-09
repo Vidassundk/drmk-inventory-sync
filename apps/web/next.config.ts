@@ -1,12 +1,19 @@
 import { existsSync } from "node:fs";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
-// Local runs have no Hyperdrive, so they connect straight to the database from the root .env.
-const rootEnv = new URL("../../.env", import.meta.url).pathname;
-if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
-if (process.env.DATABASE_URL) {
-  process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE ??= process.env.DATABASE_URL;
+/**
+ * `pnpm dev:web` has no Hyperdrive or Worker secrets, so it reads them from the root .env: the database URL, and the
+ * sign-in and email settings (see src/lib/env.ts). Only the dev server: the OpenNext build copies whatever is in
+ * process.env into the Worker bundle, which put every secret in .env into the deployed code.
+ */
+function loadRootEnvForDev() {
+  const rootEnv = new URL("../../.env", import.meta.url).pathname;
+  if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
+  if (process.env.DATABASE_URL) {
+    process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE ??= process.env.DATABASE_URL;
+  }
 }
 
 const nextConfig: NextConfig = {
@@ -22,6 +29,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default function config(phase: string): NextConfig {
+  if (phase === PHASE_DEVELOPMENT_SERVER) loadRootEnvForDev();
+  return nextConfig;
+}
 
 initOpenNextCloudflareForDev();

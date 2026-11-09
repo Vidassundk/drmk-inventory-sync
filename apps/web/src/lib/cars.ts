@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { and, count, desc, eq, gte, inArray, isNull, lte, parts, rrrCarModels, rrrCars, sql } from "@deremika/db";
 import type { CarsQuery } from "./cars-query";
-import { dataDb } from "./session";
+import { dataDb, viewerIsAdmin } from "./session";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
 import { carLabel, MAX_SEARCH_TERMS } from "./parts";
@@ -60,6 +60,7 @@ const carRowColumns = (locale: Locale) => ({
 /** Our donor cars, newest first, with how many of their parts are in stock and sold, like RRR's "Likutis" and "Parduota". */
 export async function listCars(query: CarsQuery) {
   const db = await dataDb();
+  const admin = await viewerIsAdmin();
   const { locale } = await getI18n();
   const where = carFilters(query);
 
@@ -86,7 +87,10 @@ export async function listCars(query: CarsQuery) {
       : await db
           .select({
             carId: parts.rrrCarId,
-            inStock: sql<number>`count(*) filter (where ${parts.status} = 'in_stock')::int`,
+            // Reserved parts look in stock to non-admins, so they count as in stock for them.
+            inStock: admin
+              ? sql<number>`count(*) filter (where ${parts.status} = 'in_stock')::int`
+              : sql<number>`count(*) filter (where ${parts.status} in ('in_stock', 'reserved'))::int`,
             sold: sql<number>`count(*) filter (where ${parts.status} = 'sold')::int`,
           })
           .from(parts)
@@ -184,7 +188,20 @@ export const getCar = cache(async (id: number) => {
       .where(and(eq(parts.rrrCarId, id), isNull(parts.deletedAt))),
   ]);
 
-  return car ? { ...car, stats } : null;
+  if (!car) return null;
+  if (await viewerIsAdmin()) return { ...car, stats };
+  // Non-admins see reserved parts as in stock, and nothing about parts without a price.
+  return {
+    ...car,
+    stats: {
+      ...stats,
+      inStock: stats.inStock + stats.reserved,
+      inStockValue: stats.inStockValue + stats.reservedValue,
+      reserved: 0,
+      reservedValue: 0,
+      unpriced: 0,
+    },
+  };
 });
 
 export type CarDetail = NonNullable<Awaited<ReturnType<typeof getCar>>>;

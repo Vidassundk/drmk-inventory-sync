@@ -20,6 +20,9 @@ export const requireUser = cache(async () => {
 
 export const isAdmin = (session: { user: { role?: string | null } }) => session.user.role === "admin";
 
+/** Whether the signed-in person is an admin. Others don't see reservations or the "without price" view. */
+export const viewerIsAdmin = cache(async () => isAdmin(await requireUser()));
+
 export async function requireAdmin() {
   const session = await requireUser();
   // Not found rather than forbidden: members don't need to know admin pages exist.

@@ -20,8 +20,9 @@ import {
   clearedFiltersHref,
   hasFilters,
   PART_QUALITIES,
-  PART_STATUSES,
   partsHref,
+  queryFor,
+  statusesFor,
   type PartsQuery,
 } from "@/lib/parts-query";
 
@@ -83,7 +84,7 @@ function PriceInput({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-function PricePanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
+function PricePanel({ query, apply, admin }: { query: PartsQuery; apply: Apply; admin: boolean }) {
   const { t } = useI18n();
   const [noPrice, setNoPrice] = useState(query.noPrice);
   const [min, setMin] = useState(query.priceMin?.toString() ?? "");
@@ -115,10 +116,12 @@ function PricePanel({ query, apply }: { query: PartsQuery; apply: Apply }) {
           <span className="text-muted">–</span>
           <PriceInput label={t("filters.max")} value={max} onChange={(value) => (setMax(value), setNoPrice(false))} />
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="radio" name="price-mode" checked={noPrice} onChange={() => setNoPrice(true)} />
-          {t("tabs.noPrice")}
-        </label>
+        {admin && (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" name="price-mode" checked={noPrice} onChange={() => setNoPrice(true)} />
+            {t("tabs.noPrice")}
+          </label>
+        )}
       </div>
       <PanelFooter onClear={() => apply({ noPrice: false, priceMin: null, priceMax: null })} />
     </form>
@@ -139,9 +142,11 @@ type FiltersProps = {
   modelLabel: string | null;
   carLabel: string | null;
   settings: ColumnSettings;
+  /** Non-admins don't see reservations or the "without price" option. */
+  admin: boolean;
 };
 
-export function PartsFilters({ query, brands, modelLabel, carLabel, settings }: FiltersProps) {
+export function PartsFilters({ query, brands, modelLabel, carLabel, settings, admin }: FiltersProps) {
   const i18n = useI18n();
   const { t } = i18n;
   const router = useRouter();
@@ -159,10 +164,14 @@ export function PartsFilters({ query, brands, modelLabel, carLabel, settings }: 
   }
 
   const refresh = () => startRefresh(() => router.refresh());
-  const apply: Apply = (changes) => go(partsHref(query, { ...changes, page: 1 }));
+  const apply: Apply = (changes) => go(partsHref(queryFor({ ...query, ...changes, page: 1 }, admin)));
   const toggle = (panel: Filter) => setOpen((current) => (current === panel ? null : panel));
 
-  const statusValue = query.statuses.map((status) => statusLabel(i18n, status)).join(", ");
+  const visibleStatuses = statusesFor(admin);
+  const statusValue = query.statuses
+    .filter((status) => visibleStatuses.includes(status))
+    .map((status) => statusLabel(i18n, status))
+    .join(", ");
   const priceValueText = priceSummary(query, t("tabs.noPrice"));
   const showStatus = query.statuses.length > 0 || open === "status";
   const showPrice = priceValueText !== undefined || open === "price";
@@ -185,8 +194,8 @@ export function PartsFilters({ query, brands, modelLabel, carLabel, settings }: 
           onRemove={() => apply({ statuses: [] })}
         >
           <CheckPanel
-            options={PART_STATUSES}
-            initial={query.statuses}
+            options={visibleStatuses}
+            initial={query.statuses.filter((status) => visibleStatuses.includes(status))}
             labelOf={(status) => statusLabel(i18n, status)}
             onApply={(statuses) => apply({ statuses })}
             onClear={() => apply({ statuses: [] })}
@@ -201,7 +210,7 @@ export function PartsFilters({ query, brands, modelLabel, carLabel, settings }: 
           onToggle={() => toggle("price")}
           onRemove={() => apply({ noPrice: false, priceMin: null, priceMax: null })}
         >
-          <PricePanel query={query} apply={apply} />
+          <PricePanel query={query} apply={apply} admin={admin} />
         </FilterChip>
       )}
       {showBrand && (

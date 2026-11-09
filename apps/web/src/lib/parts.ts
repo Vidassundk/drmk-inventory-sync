@@ -22,11 +22,11 @@ import {
   sql,
   type SQLWrapper,
 } from "@deremika/db";
-import { dataDb } from "./session";
+import { dataDb, viewerIsAdmin } from "./session";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
 import { carOption, carTitle } from "./part-format";
-import type { PartsQuery } from "./parts-query";
+import { queryFor, type PartsQuery } from "./parts-query";
 
 export const MAX_SEARCH_TERMS = 5;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -38,6 +38,17 @@ const rawColumns = {
   reservedByUser: sql<string | null>`${partListings.raw}->>'reserved_user'`,
   reservedAt: sql<string | null>`${partListings.raw}->>'reserved_date'`,
 };
+
+/** For non-admins: reserved parts look in stock, with no trace of who reserved them or when. */
+function hideReservation<T extends { status: string; reservedByUser?: string | null; reservedAt?: string | null }>(
+  part: T,
+  admin: boolean,
+): T {
+  if (admin) return part;
+  const hidden = { ...part, status: part.status === "reserved" ? "in_stock" : part.status };
+  if ("reservedByUser" in part) Object.assign(hidden, { reservedByUser: null, reservedAt: null });
+  return hidden;
+}
 
 /** A value in the viewer's language, falling back to Lithuanian if it has no translation. */
 const inLanguage = (locale: Locale, values: Record<Locale, SQLWrapper>) =>
@@ -341,7 +352,9 @@ function searchFilter(q: string) {
   return or(text, byRrrId);
 }
 
-export async function listParts(query: PartsQuery) {
+export async function listParts(requested: PartsQuery) {
+  const admin = await viewerIsAdmin();
+  const query = queryFor(requested, admin);
   const { q, page, pageSize, category, model } = query;
   const db = await dataDb();
   const { locale } = await getI18n();
@@ -402,7 +415,7 @@ export async function listParts(query: PartsQuery) {
   return {
     total,
     rows: rows.map(({ storageKey, sourceUrl, ...part }) => ({
-      ...part,
+      ...hideReservation(part, admin),
       coverUrl: imageUrl({ storageKey, sourceUrl }),
       stock: stock.get(groupKey(part) ?? "") ?? null,
     })),
@@ -438,6 +451,7 @@ export async function listSimilarParts(part: StockGroup & { id: string }, limit:
   if (!categoryId || !carModelId) return { rows: [], total: 0 };
 
   const db = await dataDb();
+  const admin = await viewerIsAdmin();
   const { locale } = await getI18n();
   const where = and(
     inStock(),
@@ -475,7 +489,7 @@ export async function listSimilarParts(part: StockGroup & { id: string }, limit:
   return {
     total,
     rows: rows.map(({ storageKey, sourceUrl, ...similar }) => ({
-      ...similar,
+      ...hideReservation(similar, admin),
       coverUrl: imageUrl({ storageKey, sourceUrl }),
     })),
   };
@@ -526,5 +540,8 @@ export const getPart = cache(async (id: string) => {
   ]);
 
   if (!part) return null;
-  return { ...part, photoUrls: photos.map(imageUrl).filter((url) => url !== null) };
+  return {
+    ...hideReservation(part, await viewerIsAdmin()),
+    photoUrls: photos.map(imageUrl).filter((url) => url !== null),
+  };
 });

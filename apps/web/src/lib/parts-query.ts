@@ -72,6 +72,25 @@ const TAB_FILTERS = {
 export type PartTab = keyof typeof TAB_FILTERS;
 export const PART_TABS = Object.keys(TAB_FILTERS) as PartTab[];
 
+/** Admins see reservations and parts without a price. Others see reserved parts as in stock, and neither view. */
+export const tabsFor = (admin: boolean): PartTab[] =>
+  admin ? PART_TABS : PART_TABS.filter((tab) => tab !== "reserved" && tab !== "noPrice");
+export const statusesFor = (admin: boolean): readonly PartStatus[] =>
+  admin ? PART_STATUSES : PART_STATUSES.filter((status) => status !== "reserved");
+
+/**
+ * The query as a non-admin may ask it: in stock and reserved always go together, since reserved parts look in stock
+ * to them, and "without price" is ignored. Applied by the page and again by the data layer, so editing the URL
+ * doesn't get around it.
+ */
+export function queryFor(query: PartsQuery, admin: boolean): PartsQuery {
+  if (admin) return query;
+  const stock = query.statuses.some((status) => status === "in_stock" || status === "reserved");
+  const others = query.statuses.filter((status) => status !== "in_stock" && status !== "reserved");
+  const statuses: PartStatus[] = stock ? [...DEFAULT_STATUSES, ...others] : others;
+  return { ...query, statuses: PART_STATUSES.filter((status) => statuses.includes(status)), noPrice: false };
+}
+
 const sameStatuses = (a: PartStatus[], b: PartStatus[]) => a.join() === b.join();
 const hasPriceRange = ({ priceMin, priceMax }: PartsQuery) => priceMin !== null || priceMax !== null;
 

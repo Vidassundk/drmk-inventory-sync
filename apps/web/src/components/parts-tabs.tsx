@@ -1,14 +1,14 @@
 import { AppLink } from "@/components/app-link";
 import { getI18n } from "@/lib/i18n-server";
-import { activeTab, PART_TABS, tabHref, type PartsQuery } from "@/lib/parts-query";
+import { activeTab, tabHref, tabsFor, type PartsQuery } from "@/lib/parts-query";
 
-export async function PartsTabs({ query }: { query: PartsQuery }) {
+export async function PartsTabs({ query, admin }: { query: PartsQuery; admin: boolean }) {
   const { t } = await getI18n();
   const active = activeTab(query);
 
   return (
     <nav className="flex gap-1 overflow-x-auto border-b border-zinc-200 dark:border-zinc-800">
-      {PART_TABS.map((tab) => (
+      {tabsFor(admin).map((tab) => (
         <AppLink
           key={tab}
           href={tabHref(query, tab)}

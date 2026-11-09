@@ -45,3 +45,11 @@ export function parseColumnSettings(cookie: string | undefined): ColumnSettings 
 }
 
 export const visibleColumns = ({ order, hidden }: ColumnSettings) => order.filter((key) => !hidden.includes(key));
+
+/** Reservation columns are for admins only. */
+const ADMIN_COLUMNS: PartColumnKey[] = ["reservedBy", "reservedAt"];
+
+export function columnSettingsFor({ order, hidden }: ColumnSettings, admin: boolean): ColumnSettings {
+  if (admin) return { order, hidden };
+  return { order: order.filter((key) => !ADMIN_COLUMNS.includes(key)), hidden };
+}

@@ -7,6 +7,7 @@ import { PartGallery } from "@/components/part-gallery";
 import { getCar, type CarDetail } from "@/lib/cars";
 import type { I18n } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n-server";
+import { viewerIsAdmin } from "@/lib/session";
 import { carPartsHref, type PartsQuery } from "@/lib/parts-query";
 
 const carName = (car: CarDetail) => [car.brand, car.model].filter(Boolean).join(" ") || `#${car.id}`;
@@ -63,6 +64,7 @@ export default async function CarPage({ params }: PageProps<"/cars/[id]">) {
   if (!car) notFound();
 
   const { stats } = car;
+  const admin = await viewerIsAdmin();
   const number = new Intl.NumberFormat(intlLocale);
   const years = car.yearStart ? `${car.yearStart} – ${car.yearEnd ?? ""}` : null;
   const facts = [
@@ -110,13 +112,15 @@ export default async function CarPage({ params }: PageProps<"/cars/[id]">) {
               count={stats.inStock}
               href={partsHref({ statuses: ["in_stock"] })}
             />
-            <StatRow
-              i18n={i18n}
-              label={t("car.partsReserved")}
-              value={stats.reservedValue}
-              count={stats.reserved}
-              href={partsHref({ statuses: ["reserved"] })}
-            />
+            {admin && (
+              <StatRow
+                i18n={i18n}
+                label={t("car.partsReserved")}
+                value={stats.reservedValue}
+                count={stats.reserved}
+                href={partsHref({ statuses: ["reserved"] })}
+              />
+            )}
             <StatRow
               i18n={i18n}
               label={t("car.partsSold")}
@@ -124,12 +128,14 @@ export default async function CarPage({ params }: PageProps<"/cars/[id]">) {
               count={stats.sold}
               href={partsHref({ statuses: ["sold"] })}
             />
-            <StatRow
-              i18n={i18n}
-              label={t("car.partsUnpriced")}
-              count={stats.unpriced}
-              href={partsHref({ statuses: ["in_stock"], noPrice: true })}
-            />
+            {admin && (
+              <StatRow
+                i18n={i18n}
+                label={t("car.partsUnpriced")}
+                count={stats.unpriced}
+                href={partsHref({ statuses: ["in_stock"], noPrice: true })}
+              />
+            )}
           </section>
         </div>
         <section>
