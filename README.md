@@ -21,7 +21,7 @@ An ever-updating backup of a used auto-parts inventory on RRR (rrr.lt / Ovoko), 
 | **Sign-in email**                            |                                                |
 | ![Sign-in email](docs/screenshots/email.png) |                                                |
 
-The screenshots use the neutral "drmk" brand and placeholder people, and staff names are hidden.
+The screenshots use a placeholder brand and placeholder people, and staff names are hidden.
 
 ## How it fits together
 
@@ -62,7 +62,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Fill in `.env`. It is gitignored, so credentials never reach the repo. The dashboard's name, logo, domains and email sender aren't in the repo either: see [the brand folder](apps/web/brand.example/README.md). Then check the RRR connection:
+Fill in `.env`. It is gitignored, so credentials never reach the repo. Then check the RRR connection:
 
 ```bash
 pnpm smoke:rrr
@@ -134,7 +134,6 @@ Any of them can also be started by hand from the repo's Actions tab.
 | `.env`                                | Everything in `.env.example`, for local runs                                                                                                                     |
 | GitHub → Settings → Secrets → Actions | `DATABASE_URL`, `RRR_USERNAME`, `RRR_PASSWORD`, `RRR_USER_TOKEN`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` |
 | Cloudflare Worker `drmk-web`          | `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, set with `wrangler secret put`. The database comes through Hyperdrive                                                    |
-| `apps/web/brand.local/` (gitignored)  | The brand: name, logo, domains and email sender. Not secret, just kept out of the repo                                                                           |
 | Cloudflare Worker `drmk-scheduler`    | `GITHUB_TOKEN`                                                                                                                                                   |
 
 This repo is public, and so are its Actions logs. Don't commit credentials or print part data in job output.

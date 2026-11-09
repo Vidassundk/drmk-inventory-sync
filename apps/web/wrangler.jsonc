@@ -4,10 +4,13 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  // Only the custom domains serve this Worker. They're in brand.local/brand.json, not here, and
-  // scripts/deploy.mjs attaches them. Each one must also be behind sign-in (and Cloudflare Access while it's on).
+  // Only these custom domains serve this Worker. Each must also be listed in brand/brand.json, which allows sign-in from it.
   "workers_dev": false,
   "preview_urls": false,
+  "routes": [
+    { "pattern": "stock.deremika.lt", "custom_domain": true },
+    { "pattern": "app.vidasstirbys.com", "custom_domain": true },
+  ],
   "observability": { "enabled": true },
   "vars": { "R2_PUBLIC_BASE_URL": "https://images.vidasstirbys.com" },
   "hyperdrive": [

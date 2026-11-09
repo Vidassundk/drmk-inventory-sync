@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "preview": "opennextjs-cloudflare build && node scripts/strip-build-env.mjs && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && node scripts/strip-build-env.mjs && node scripts/deploy.mjs"
+    "deploy": "opennextjs-cloudflare build && node scripts/strip-build-env.mjs && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@drmk/db": "workspace:*",

@@ -17,13 +17,11 @@ function loadRootEnvForDev() {
 }
 
 /**
- * The brand: name, logo, domains and email sender. They live in brand.local/ (gitignored), so the repo carries none;
- * without it, brand.example/ supplies neutral defaults. Read here and inlined into the code at build time, because a
- * Worker can't read files. See brand.example/README.md.
+ * The brand from brand/: name, logo, domains and email sender. Read here and inlined into the code at build time,
+ * because a Worker can't read files.
  */
 function readBrand(): Record<string, string> {
-  const local = new URL("./brand.local/", import.meta.url);
-  const dir = existsSync(new URL("brand.json", local)) ? local : new URL("./brand.example/", import.meta.url);
+  const dir = new URL("./brand/", import.meta.url);
   const brand = JSON.parse(readFileSync(new URL("brand.json", dir), "utf8"));
   return {
     BRAND_NAME: brand.name,

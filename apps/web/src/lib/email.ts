@@ -20,7 +20,7 @@ export async function sendEmail({ to, subject, body }: { to: string; subject: st
   }
 
   const from = serverEnv("EMAIL_FROM") || BRAND_EMAIL_FROM;
-  if (!from) throw new Error("No sender: set emailFrom in apps/web/brand.local/brand.json");
+  if (!from) throw new Error("No sender: set emailFrom in apps/web/brand/brand.json");
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
