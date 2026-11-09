@@ -1,5 +1,4 @@
 {
-  "app.title": "Inventorius",
   "app.description": "Inventoriaus valdymo skydelis",
   "theme.toggle": "Perjungti šviesią ar tamsią temą",
   "theme.title": "Perjungti temą",
@@ -102,6 +101,8 @@
   "part.viewListing": "Žiūrėti skelbimą",
   "similar.title": "Panašios dalys sandėlyje ({items})",
   "similar.showAll": "Rodyti visas",
+  "nav.inventory": "Inventorius",
+  "nav.settings": "Nustatymai",
   "nav.parts": "Dalys",
   "nav.cars": "Automobiliai",
   "cars.title": "Automobiliai",

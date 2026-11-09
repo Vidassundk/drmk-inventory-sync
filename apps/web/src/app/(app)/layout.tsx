@@ -6,13 +6,11 @@ import { MainNav } from "@/components/main-nav";
 import { PartsSearch } from "@/components/parts-search";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
-import { getI18n } from "@/lib/i18n-server";
 import { isAdmin, requireUser } from "@/lib/session";
 
 /** The dashboard: header, sidebar and pages, for signed-in people only. */
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireUser();
-  const { t } = await getI18n();
 
   return (
     <>
@@ -39,9 +37,6 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <aside className="shrink-0 border-b border-zinc-200 px-4 py-2 md:w-60 md:border-r md:border-b-0 md:px-3 md:py-4 dark:border-zinc-800">
           {/* Stays in view below the sticky header (4rem tall on wide screens) while long lists scroll. */}
           <div className="md:sticky md:top-20">
-            <h2 className="hidden px-3 pb-2 text-xs font-medium tracking-wide text-muted uppercase md:block">
-              {t("app.title")}
-            </h2>
             <MainNav isAdmin={isAdmin(session)} />
           </div>
         </aside>

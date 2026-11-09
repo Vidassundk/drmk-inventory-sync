@@ -1,5 +1,4 @@
 {
-  "app.title": "Инвентарь",
   "app.description": "Панель управления складом",
   "theme.toggle": "Переключить светлую или тёмную тему",
   "theme.title": "Сменить тему",
@@ -102,6 +101,8 @@
   "part.viewListing": "Открыть объявление",
   "similar.title": "Похожие запчасти на складе ({items})",
   "similar.showAll": "Показать все",
+  "nav.inventory": "Склад",
+  "nav.settings": "Настройки",
   "nav.parts": "Запчасти",
   "nav.cars": "Автомобили",
   "cars.title": "Автомобили",

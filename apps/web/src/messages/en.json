@@ -1,5 +1,4 @@
 {
-  "app.title": "Inventory",
   "app.description": "Inventory dashboard",
   "theme.toggle": "Switch between light and dark theme",
   "theme.title": "Switch theme",
@@ -102,6 +101,8 @@
   "part.viewListing": "View listing",
   "similar.title": "Similar parts in stock ({items})",
   "similar.showAll": "Show all",
+  "nav.inventory": "Inventory",
+  "nav.settings": "Settings",
   "nav.parts": "Parts",
   "nav.cars": "Cars",
   "cars.title": "Cars",
