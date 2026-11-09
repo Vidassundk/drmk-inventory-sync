@@ -1,6 +1,6 @@
 # TODO
 
-What's left for the dashboard to be a good mirror of RRR, roughly in priority order.
+What's left, roughly in priority order. The backup, the dashboard and invite-only sign-in work today.
 
 ## Stock visibility
 
@@ -41,21 +41,30 @@ The two rows that didn't match, and a few € figures, are most likely prices or
 - [ ] Column settings for the cars table
 - [ ] Copy car photos to R2: they still load from Ovoko's car image server, and only 331 of 819 cars have any
 - [ ] Car columns and filters RRR shows but the API doesn't provide: purchase date, dismantling date, status (also its filter), created by
-- [ ] Sidebar navigation like RRR's
+- [x] Sidebar navigation like RRR's
 - [ ] "Last synced" time, so people can see how fresh the data is
 - [ ] Check our totals per status against RRR's
 
-## Sign-in
+## Sign-in and access
 
-Invite-only sign-in with emailed codes replaces Cloudflare Access. Built, not yet live:
+Invite-only sign-in with emailed codes, built to replace Cloudflare Access.
 
-- [ ] Resend: add `deremika.lt` as a sending domain and its DNS records in Cloudflare
-- [ ] Secrets on the Worker: `BETTER_AUTH_SECRET` and `RESEND_API_KEY` (`wrangler secret put`)
-- [ ] First admin: `pnpm users:add <email> admin`, then invite the team from Users
-- [ ] Once it works on `stock.deremika.lt`, remove Cloudflare Access from that address
-- [ ] Customer role: in-stock parts only, without internal notes, creator, reserver or car statistics
+- [x] Resend: `deremika.lt` added as a sending domain, with its DNS records in Cloudflare
+- [x] Worker secrets: `BETTER_AUTH_SECRET` and `RESEND_API_KEY`
+- [x] Admin Users page: invite, resend, remove
+- [x] Non-admins don't see reservations or parts without a price
+- [ ] Deploy, sign in as the first admin, and invite the team
+- [ ] Once sign-in works on `stock.deremika.lt`, remove Cloudflare Access from it, then retire `app.vidasstirbys.com`
+- [ ] A customer role for outside guests: in-stock parts only, without internal notes, creator or car statistics
+- [ ] Change someone's role from the Users page (only at invite time now)
 - [ ] After sign-in, return to the page that was asked for instead of always the parts list
 - [ ] A PNG logo in the emails (only text now: SVG doesn't show in Gmail)
+
+## Security
+
+- [ ] Redeploy with `pnpm web:deploy`: earlier deploys carried the root `.env` values inside the Worker
+- [ ] Rotate the RRR password, and when convenient the database password, R2 keys and RRR token
+- [ ] Revoke the GitHub token left as a comment in `.env`
 
 ## Infrastructure
 
@@ -65,6 +74,7 @@ Invite-only sign-in with emailed codes replaces Cloudflare Access. Built, not ye
 - [ ] Upgrade Supabase before phase 2, for daily backups
 - [ ] Move the jobs off GitHub Actions to a small server before phase 2
 
-## Phase 2
+## On hold
 
 - [ ] Edit stock from the dashboard and push changes to RRR
+- [ ] List parts on several marketplaces, with our database as the source of truth

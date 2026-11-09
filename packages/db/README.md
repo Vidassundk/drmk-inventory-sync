@@ -12,18 +12,18 @@ await client.end();
 
 ## Tables
 
-| Table            | Holds                                                                    |
-| ---------------- | ------------------------------------------------------------------------ |
-| `parts`          | Our own record of each part, independent of any marketplace              |
-| `channels`       | Marketplaces. Currently just `rrr`                                       |
-| `part_listings`  | A part on one channel: external ID, raw payload, content hash, last seen |
-| `images`         | One row per source photo, with its R2 location and copy status           |
-| `part_images`    | Which images belong to which part, in order                              |
-| `rrr_cars`       | Donor cars with their codes translated to Lithuanian names               |
-| `rrr_car_models` | RRR's brand and model catalog                                            |
-| `rrr_categories` | RRR's category tree in Lithuanian, with each category's full path        |
-| `sync_runs`      | History of sync jobs, with their stats and cursor                        |
-| `auth_*`         | Dashboard sign-in (Better Auth): users, sessions, codes and rate limits  |
+| Table            | Holds                                                                        |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `parts`          | Our own record of each part, independent of any marketplace                  |
+| `channels`       | Marketplaces. Currently just `rrr`                                           |
+| `part_listings`  | A part on one channel: external ID, raw payload, content hash, last seen     |
+| `images`         | One row per source photo, with its R2 location and copy status               |
+| `part_images`    | Which images belong to which part, in order                                  |
+| `rrr_cars`       | Donor cars, with names in Lithuanian and translations to English and Russian |
+| `rrr_car_models` | RRR's brand and model catalog                                                |
+| `rrr_categories` | RRR's category tree in three languages, with each category's full path       |
+| `sync_runs`      | History of sync jobs, with their stats and cursor                            |
+| `auth_*`         | Dashboard sign-in (Better Auth): users, sessions, codes and rate limits      |
 
 Dashboard access is invite-only: a row in `auth_users` is what lets an email sign in. Add the first admin with `pnpm users:add you@example.com admin`; they invite everyone else from the dashboard's Users page.
 
