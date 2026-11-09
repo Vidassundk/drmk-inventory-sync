@@ -78,6 +78,20 @@
       "when": 1794052945056,
       "tag": "0010_parts_car_index",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794214916404,
+      "tag": "0011_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794215683175,
+      "tag": "0012_auth_last_sign_in",
+      "breakpoints": true
     }
   ]
 }

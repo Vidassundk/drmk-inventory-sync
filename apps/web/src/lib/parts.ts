@@ -22,7 +22,7 @@ import {
   sql,
   type SQLWrapper,
 } from "@deremika/db";
-import { getDb } from "./db";
+import { dataDb } from "./session";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
 import { carOption, carTitle } from "./part-format";
@@ -117,7 +117,7 @@ const TOP_BRANDS = ["BMW", "Mercedes-Benz", "Audi", "Ford", "Renault", "Volvo", 
  * Audi rather than on brands like Acura that we've never had.
  */
 export async function searchCarModels(q: string, brand: string | null, limit: number, offset: number) {
-  const db = getDb();
+  const db = await dataDb();
   const terms = q.toLowerCase().split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_TERMS);
   const stocked = db
     .selectDistinct({ brand: sql<string>`${rrrCarModels.brand}`.as("stocked_brand") })
@@ -194,7 +194,9 @@ export async function searchCars(
     ${columns.carSteering}, ${columns.carGearbox}))`;
   const terms = q.toLowerCase().replaceAll("#", " ").split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_TERMS);
 
-  const rows = await getDb()
+  const db = await dataDb();
+
+  const rows = await db
     .select(columns)
     .from(rrrCars)
     .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
@@ -216,7 +218,8 @@ export async function searchCars(
 export async function carLabelFor(car: number | null) {
   if (!car) return null;
   const { locale } = await getI18n();
-  const [row] = await getDb()
+  const db = await dataDb();
+  const [row] = await db
     .select(carOptionColumns(locale))
     .from(rrrCars)
     .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
@@ -227,7 +230,8 @@ export async function carLabelFor(car: number | null) {
 /** The chosen model's name, for the filter chip. */
 export async function carModelLabel(model: number | null) {
   if (!model) return null;
-  const [row] = await getDb()
+  const db = await dataDb();
+  const [row] = await db
     .select({
       carBrand: rrrCarModels.brand,
       carModel: rrrCarModels.name,
@@ -241,7 +245,8 @@ export async function carModelLabel(model: number | null) {
 
 /** Every brand in RRR's catalogue, not only ones in stock, in the order RRR lists them. */
 export async function listCarBrands() {
-  const rows = await getDb().selectDistinct({ brand: rrrCarModels.brand }).from(rrrCarModels);
+  const db = await dataDb();
+  const rows = await db.selectDistinct({ brand: rrrCarModels.brand }).from(rrrCarModels);
   const brands = rows.map((row) => row.brand).sort((a, b) => a.localeCompare(b, "en"));
   return [
     ...TOP_BRANDS.filter((brand) => brands.includes(brand)),
@@ -275,7 +280,9 @@ async function stockFor(groups: StockGroup[]) {
   );
   if (pairs.size === 0) return new Map<string, { count: number; averagePrice: string | null }>();
 
-  const stats = await getDb()
+  const db = await dataDb();
+
+  const stats = await db
     .select({
       categoryId: parts.rrrCategoryId,
       carModelId: rrrCars.modelId,
@@ -336,7 +343,7 @@ function searchFilter(q: string) {
 
 export async function listParts(query: PartsQuery) {
   const { q, page, pageSize, category, model } = query;
-  const db = getDb();
+  const db = await dataDb();
   const { locale } = await getI18n();
   const where = and(isNull(parts.deletedAt), filtersFor(query), searchFilter(q), similarFilter({ category, model }));
 
@@ -406,7 +413,7 @@ export async function listParts(query: PartsQuery) {
 export async function similarFilterLabel({ category, model }: Pick<PartsQuery, "category" | "model">) {
   // A model on its own has its own filter chip; this label is for the "Sandėlyje" links.
   if (!category) return null;
-  const db = getDb();
+  const db = await dataDb();
   const { locale } = await getI18n();
   const [[categoryRow], [modelRow]] = await Promise.all([
     category
@@ -430,7 +437,7 @@ export async function listSimilarParts(part: StockGroup & { id: string }, limit:
   const { categoryId, carModelId } = part;
   if (!categoryId || !carModelId) return { rows: [], total: 0 };
 
-  const db = getDb();
+  const db = await dataDb();
   const { locale } = await getI18n();
   const where = and(
     inStock(),
@@ -479,7 +486,7 @@ export type PartRow = Awaited<ReturnType<typeof listParts>>["rows"][number];
 /** One part with everything the detail page shows. Cached so metadata and the page share a single read. */
 export const getPart = cache(async (id: string) => {
   if (!UUID.test(id)) return null;
-  const db = getDb();
+  const db = await dataDb();
   const { locale } = await getI18n();
 
   const [[part], photos] = await Promise.all([

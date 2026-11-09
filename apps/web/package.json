@@ -16,6 +16,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@opennextjs/cloudflare": "^1.20.16",
+    "@react-email/render": "2.0.6",
+    "better-auth": "1.7.18",
     "next": "16.4.5",
     "react": "19.3.0",
     "react-dom": "19.3.0"

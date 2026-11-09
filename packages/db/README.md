@@ -23,6 +23,9 @@ await client.end();
 | `rrr_car_models` | RRR's brand and model catalog                                            |
 | `rrr_categories` | RRR's category tree in Lithuanian, with each category's full path        |
 | `sync_runs`      | History of sync jobs, with their stats and cursor                        |
+| `auth_*`         | Dashboard sign-in (Better Auth): users, sessions, codes and rate limits  |
+
+Dashboard access is invite-only: a row in `auth_users` is what lets an email sign in. Add the first admin with `pnpm users:add you@example.com admin`; they invite everyone else from the dashboard's Users page.
 
 Removed parts are kept, with `deleted_at` set. `parts` and `part_listings` are separate so that one part can later be listed on several marketplaces.
 

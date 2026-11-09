@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { and, count, desc, eq, gte, inArray, isNull, lte, parts, rrrCarModels, rrrCars, sql } from "@deremika/db";
 import type { CarsQuery } from "./cars-query";
-import { getDb } from "./db";
+import { dataDb } from "./session";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
 import { carLabel, MAX_SEARCH_TERMS } from "./parts";
@@ -59,7 +59,7 @@ const carRowColumns = (locale: Locale) => ({
 
 /** Our donor cars, newest first, with how many of their parts are in stock and sold, like RRR's "Likutis" and "Parduota". */
 export async function listCars(query: CarsQuery) {
-  const db = getDb();
+  const db = await dataDb();
   const { locale } = await getI18n();
   const where = carFilters(query);
 
@@ -106,7 +106,7 @@ export type CarFilterOption = { value: string; label: string };
 
 /** The fuel and gearbox values our cars actually have, as stored and as shown in the viewer's language. */
 export async function carFilterOptions() {
-  const db = getDb();
+  const db = await dataDb();
   const { locale } = await getI18n();
   const options = async (field: keyof typeof LABELLED_FIELDS) => {
     const rows = await db
@@ -137,7 +137,7 @@ const rawText = (field: string) => sql<string | null>`nullif(trim(${rrrCars.raw}
 /** One car with everything RRR's car page shows that the API gives us, and what its parts are worth by status. */
 export const getCar = cache(async (id: number) => {
   if (!Number.isSafeInteger(id) || id <= 0) return null;
-  const db = getDb();
+  const db = await dataDb();
   const { locale } = await getI18n();
   // Templates, write-offs and parts under audit aren't stock, so they stay out of the totals.
   const counted = inArray(parts.status, ["in_stock", "reserved", "sold"]);

@@ -17,6 +17,7 @@
     "db:generate": "pnpm --filter @deremika/db generate",
     "db:migrate": "pnpm --filter @deremika/db migrate",
     "db:studio": "pnpm --filter @deremika/db studio",
+    "users:add": "node --env-file-if-exists=.env packages/db/scripts/add-user.ts",
     "sync:full": "pnpm --filter worker sync:full",
     "sync:incremental": "pnpm --filter worker sync:incremental",
     "sync:cars": "pnpm --filter worker sync:cars",

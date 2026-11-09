@@ -37,13 +37,25 @@ The two rows that didn't match, and a few € figures, are most likely prices or
 ## Pages
 
 - [x] Cars list with Likutis and Parduota counts, filters and search (by ID, car or VIN)
-- [ ] Car detail page (mileage, VIN, engine code and photo gallery are already synced)
+- [x] Car detail page
 - [ ] Column settings for the cars table
 - [ ] Copy car photos to R2: they still load from Ovoko's car image server, and only 331 of 819 cars have any
 - [ ] Car columns and filters RRR shows but the API doesn't provide: purchase date, dismantling date, status (also its filter), created by
 - [ ] Sidebar navigation like RRR's
 - [ ] "Last synced" time, so people can see how fresh the data is
 - [ ] Check our totals per status against RRR's
+
+## Sign-in
+
+Invite-only sign-in with emailed codes replaces Cloudflare Access. Built, not yet live:
+
+- [ ] Resend: add `deremika.lt` as a sending domain and its DNS records in Cloudflare
+- [ ] Secrets on the Worker: `BETTER_AUTH_SECRET` and `RESEND_API_KEY` (`wrangler secret put`)
+- [ ] First admin: `pnpm users:add <email> admin`, then invite the team from Users
+- [ ] Once it works on `stock.deremika.lt`, remove Cloudflare Access from that address
+- [ ] Customer role: in-stock parts only, without internal notes, creator, reserver or car statistics
+- [ ] After sign-in, return to the page that was asked for instead of always the parts list
+- [ ] A PNG logo in the emails (only text now: SVG doesn't show in Gmail)
 
 ## Infrastructure
 

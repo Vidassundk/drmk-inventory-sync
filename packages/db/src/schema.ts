@@ -3,7 +3,9 @@
 // Every table has RLS on with no policies: only server-side connections read it.
 import { sql, type SQLWrapper } from "drizzle-orm";
 import {
+  bigint,
   bigserial,
+  boolean,
   index,
   integer,
   jsonb,
@@ -227,3 +229,88 @@ export const syncRuns = pgTable(
   },
   (t) => [index("sync_runs_channel_kind_idx").on(t.channelId, t.kind, t.startedAt)],
 ).enableRLS();
+
+// Sign-in, managed by Better Auth (apps/web/src/lib/auth.ts). Invite-only: a user row is created when someone is
+// invited, and Better Auth refuses codes for any email without one. Table and column names are ours; the field names
+// are what Better Auth expects.
+
+export const userRole = pgEnum("user_role", ["admin", "member"]);
+export type UserRole = (typeof userRole.enumValues)[number];
+
+export const authUsers = pgTable("auth_users", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  /** False until the invited person signs in for the first time. */
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  role: userRole("role").notNull().default("member"),
+  /** Language for emails: lt, en or ru. */
+  locale: text("locale").notNull().default("lt"),
+  invitedBy: text("invited_by"),
+  lastSignInAt: timestamp("last_sign_in_at", { withTimezone: true }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}).enableRLS();
+
+export const authSessions = pgTable(
+  "auth_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("auth_sessions_user_idx").on(t.userId)],
+).enableRLS();
+
+/** Unused by code sign-in, but Better Auth requires the table. */
+export const authAccounts = pgTable(
+  "auth_accounts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("auth_accounts_user_idx").on(t.userId)],
+).enableRLS();
+
+/** Sign-in codes, stored hashed. */
+export const authVerifications = pgTable(
+  "auth_verifications",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("auth_verifications_identifier_idx").on(t.identifier)],
+).enableRLS();
+
+/** Request counts per IP and endpoint. In the database because each Worker instance has its own memory. */
+export const authRateLimits = pgTable("auth_rate_limits", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+}).enableRLS();

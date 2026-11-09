@@ -52,3 +52,36 @@ export function PhotoIcon({ className = "size-4" }: { className?: string }) {
     </svg>
   );
 }
+
+// A person, for the account menu.
+export function UserIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      className={`${ICON} ${className}`}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="8" cy="5.5" r="2.75" />
+      <path d="M2.75 14c.6-2.6 2.7-4.25 5.25-4.25S12.65 11.4 13.25 14" />
+    </svg>
+  );
+}
+
+// Two people, for managing who has access.
+export function UsersIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      className={`${ICON} ${className}`}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="6" cy="5.75" r="2.25" />
+      <path d="M1.75 13.5c.45-2.15 2.1-3.5 4.25-3.5s3.8 1.35 4.25 3.5" />
+      <path d="M10.5 3.75a2.25 2.25 0 0 1 0 4M12.25 10.4c1 .55 1.75 1.6 2 3.1" />
+    </svg>
+  );
+}

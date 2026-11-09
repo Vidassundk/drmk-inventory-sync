@@ -3,22 +3,25 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppLink } from "@/components/app-link";
-import { CarsIcon, PartsIcon } from "@/components/icons";
+import { CarsIcon, PartsIcon, UsersIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
 
-const LINKS: { href: string; label: "nav.parts" | "nav.cars"; icon: ReactNode }[] = [
+type NavLink = { href: string; label: "nav.parts" | "nav.cars" | "nav.users"; icon: ReactNode };
+
+const LINKS: NavLink[] = [
   { href: "/parts", label: "nav.parts", icon: <PartsIcon /> },
   { href: "/cars", label: "nav.cars", icon: <CarsIcon /> },
 ];
+const ADMIN_LINKS: NavLink[] = [{ href: "/users", label: "nav.users", icon: <UsersIcon /> }];
 
 /** The sidebar: a column on wide screens, a row under the header on phones. */
-export function MainNav() {
+export function MainNav({ isAdmin }: { isAdmin: boolean }) {
   const { t } = useI18n();
   const pathname = usePathname();
 
   return (
     <nav className="flex gap-1 text-sm md:flex-col">
-      {LINKS.map(({ href, label, icon }) => (
+      {(isAdmin ? [...LINKS, ...ADMIN_LINKS] : LINKS).map(({ href, label, icon }) => (
         <AppLink
           key={href}
           href={href}
