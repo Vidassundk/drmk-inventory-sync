@@ -194,5 +194,8 @@
   "users.resend": "Resend",
   "users.resent": "Sent",
   "users.remove": "Remove",
+  "users.removing": "Removing…",
+  "users.removed": "Removed",
+  "users.removeFailed": "Failed, try again",
   "users.removeConfirm": "Remove {email}? Their access ends within a few minutes."
 }

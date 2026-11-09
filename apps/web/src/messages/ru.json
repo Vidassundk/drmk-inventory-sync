@@ -194,5 +194,8 @@
   "users.resend": "Отправить ещё раз",
   "users.resent": "Отправлено",
   "users.remove": "Удалить",
+  "users.removing": "Удаление…",
+  "users.removed": "Удалён",
+  "users.removeFailed": "Не удалось, ещё раз",
   "users.removeConfirm": "Удалить {email}? Доступ закроется в течение нескольких минут."
 }

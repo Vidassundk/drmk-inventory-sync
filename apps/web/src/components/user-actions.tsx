@@ -21,13 +21,17 @@ export function UserActions({
   const { t } = useI18n();
   const [busy, startTransition] = useTransition();
   const [resent, setResent] = useState(false);
+  // Stays "removed" until the refreshed list drops the row, so the button can't be pressed twice. A failed request may
+  // still have removed them; trying again is harmless.
+  const [removal, setRemoval] = useState<"idle" | "removing" | "removed" | "failed">("idle");
+  const locked = busy || removal === "removing" || removal === "removed";
 
   return (
     <div className="flex justify-end gap-1 whitespace-nowrap">
       {pending && (
         <button
           type="button"
-          disabled={busy || resent}
+          disabled={locked || resent}
           onClick={() =>
             startTransition(async () => {
               await resendInvite(userId);
@@ -42,13 +46,31 @@ export function UserActions({
       {!self && (
         <button
           type="button"
-          disabled={busy}
+          disabled={locked}
+          aria-live="polite"
           onClick={() => {
-            if (window.confirm(t("users.removeConfirm", { email }))) startTransition(() => removeUser(userId));
+            if (!window.confirm(t("users.removeConfirm", { email }))) return;
+            setRemoval("removing");
+            startTransition(async () => {
+              try {
+                await removeUser(userId);
+                setRemoval("removed");
+              } catch {
+                setRemoval("failed");
+              }
+            });
           }}
           className={`${ACTION} text-red-700 dark:text-red-300`}
         >
-          {t("users.remove")}
+          {t(
+            removal === "removing"
+              ? "users.removing"
+              : removal === "removed"
+                ? "users.removed"
+                : removal === "failed"
+                  ? "users.removeFailed"
+                  : "users.remove",
+          )}
         </button>
       )}
     </div>

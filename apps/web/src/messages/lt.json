@@ -194,5 +194,8 @@
   "users.resend": "Siųsti dar kartą",
   "users.resent": "Išsiųsta",
   "users.remove": "Pašalinti",
+  "users.removing": "Šalinama…",
+  "users.removed": "Pašalinta",
+  "users.removeFailed": "Nepavyko, bandyti dar",
   "users.removeConfirm": "Pašalinti {email}? Prieiga bus panaikinta per kelias minutes."
 }
