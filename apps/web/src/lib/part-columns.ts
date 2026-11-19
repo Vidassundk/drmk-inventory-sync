@@ -46,8 +46,15 @@ export function parseColumnSettings(cookie: string | undefined): ColumnSettings 
 
 export const visibleColumns = ({ order, hidden }: ColumnSettings) => order.filter((key) => !hidden.includes(key));
 
-/** Reservation columns are for admins only. */
-const ADMIN_COLUMNS: PartColumnKey[] = ["reservedBy", "reservedAt"];
+/** Columns for admins only. Everyone else sees parts for sale, so status, reservations and the workshop's own details stay out. */
+export const ADMIN_COLUMNS: PartColumnKey[] = [
+  "status",
+  "quality",
+  "reservedBy",
+  "reservedAt",
+  "createdBy",
+  "listedAt",
+];
 
 export function columnSettingsFor({ order, hidden }: ColumnSettings, admin: boolean): ColumnSettings {
   if (admin) return { order, hidden };

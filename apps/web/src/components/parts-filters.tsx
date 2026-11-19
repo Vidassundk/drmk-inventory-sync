@@ -20,9 +20,11 @@ import {
   clearedFiltersHref,
   hasFilters,
   PART_QUALITIES,
+  PART_SORTS,
+  PART_STATUSES,
   partsHref,
   queryFor,
-  statusesFor,
+  type PartSort,
   type PartsQuery,
 } from "@/lib/parts-query";
 
@@ -30,6 +32,8 @@ type Filter = "status" | "price" | "brand" | "model" | "car" | "code" | "quality
 type Apply = (changes: Partial<PartsQuery>) => void;
 
 const FILTERS: Filter[] = ["status", "price", "brand", "model", "car", "code", "quality"];
+/** Everyone else only sees parts for sale, and not their quality. */
+const ADMIN_FILTERS: Filter[] = ["status", "quality"];
 const FILTER_LABELS = {
   status: "columns.status",
   price: "columns.price",
@@ -142,7 +146,7 @@ type FiltersProps = {
   modelLabel: string | null;
   carLabel: string | null;
   settings: ColumnSettings;
-  /** Non-admins don't see reservations or the "without price" option. */
+  /** Non-admins don't see statuses, quality, the "without price" option or the sort menu. */
   admin: boolean;
 };
 
@@ -167,20 +171,17 @@ export function PartsFilters({ query, brands, modelLabel, carLabel, settings, ad
   const apply: Apply = (changes) => go(partsHref(queryFor({ ...query, ...changes, page: 1 }, admin)));
   const toggle = (panel: Filter) => setOpen((current) => (current === panel ? null : panel));
 
-  const visibleStatuses = statusesFor(admin);
-  const statusValue = query.statuses
-    .filter((status) => visibleStatuses.includes(status))
-    .map((status) => statusLabel(i18n, status))
-    .join(", ");
+  const filters = admin ? FILTERS : FILTERS.filter((filter) => !ADMIN_FILTERS.includes(filter));
+  const statusValue = query.statuses.map((status) => statusLabel(i18n, status)).join(", ");
   const priceValueText = priceSummary(query, t("tabs.noPrice"));
-  const showStatus = query.statuses.length > 0 || open === "status";
+  const showStatus = admin && (query.statuses.length > 0 || open === "status");
   const showPrice = priceValueText !== undefined || open === "price";
   const showBrand = query.brand !== null || open === "brand";
   // With a category too, this came from a "Sandėlyje" link, which has its own label above the table.
   const showModel = (query.model !== null && query.category === null) || open === "model";
   const showCar = query.car !== null || open === "car";
   const showCode = query.code !== null || open === "code";
-  const showQuality = query.qualities.length > 0 || open === "quality";
+  const showQuality = admin && (query.qualities.length > 0 || open === "quality");
   const brandParam: Record<string, string> = query.brand ? { brand: query.brand } : {};
 
   return (
@@ -194,8 +195,8 @@ export function PartsFilters({ query, brands, modelLabel, carLabel, settings, ad
           onRemove={() => apply({ statuses: [] })}
         >
           <CheckPanel
-            options={visibleStatuses}
-            initial={query.statuses.filter((status) => visibleStatuses.includes(status))}
+            options={PART_STATUSES}
+            initial={query.statuses}
             labelOf={(status) => statusLabel(i18n, status)}
             onApply={(statuses) => apply({ statuses })}
             onClear={() => apply({ statuses: [] })}
@@ -305,7 +306,7 @@ export function PartsFilters({ query, brands, modelLabel, carLabel, settings, ad
           + {t("filters.add")}
         </button>
         {open === "menu" && (
-          <AddFilterMenu items={FILTERS.map((key) => ({ key, label: t(FILTER_LABELS[key]) }))} onChoose={setOpen} />
+          <AddFilterMenu items={filters.map((key) => ({ key, label: t(FILTER_LABELS[key]) }))} onChoose={setOpen} />
         )}
       </div>
       <div className="ml-auto flex items-center gap-2">
@@ -317,6 +318,20 @@ export function PartsFilters({ query, brands, modelLabel, carLabel, settings, ad
           >
             {t("filters.clearAll")}
           </button>
+        )}
+        {admin && (
+          <select
+            value={query.sort}
+            onChange={(event) => go(partsHref(query, { sort: event.target.value as PartSort, page: 1 }))}
+            aria-label={t("sort.label")}
+            className="h-8 rounded-md border border-zinc-300 bg-background px-2 text-sm dark:border-zinc-700"
+          >
+            {PART_SORTS.map((sort) => (
+              <option key={sort} value={sort}>
+                {t(`sort.${sort}`)}
+              </option>
+            ))}
+          </select>
         )}
         <PartsTableSettings settings={settings} />
         <button

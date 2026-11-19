@@ -26,6 +26,10 @@ export type PartQuality = (typeof PART_QUALITIES)[number];
 
 export type PartCode = "with" | "without";
 
+/** The list's order. Admins can change it; everyone else gets the newest first. */
+export const PART_SORTS = ["newest", "oldest", "az", "za"] as const;
+export type PartSort = (typeof PART_SORTS)[number];
+
 export type PartsQuery = {
   q: string;
   page: number;
@@ -42,6 +46,7 @@ export type PartsQuery = {
   /** Set together to list the parts of one kind for one car model, which is what "Sandėlyje" counts. */
   category: number | null;
   model: number | null;
+  sort: PartSort;
 };
 
 const DEFAULTS: PartsQuery = {
@@ -58,6 +63,7 @@ const DEFAULTS: PartsQuery = {
   code: null,
   category: null,
   model: null,
+  sort: "newest",
 };
 
 /** Tabs are shortcuts that set filters, so a tab and a filter can never disagree. */
@@ -72,23 +78,19 @@ const TAB_FILTERS = {
 export type PartTab = keyof typeof TAB_FILTERS;
 export const PART_TABS = Object.keys(TAB_FILTERS) as PartTab[];
 
-/** Admins see reservations and parts without a price. Others see reserved parts as in stock, and neither view. */
-export const tabsFor = (admin: boolean): PartTab[] =>
-  admin ? PART_TABS : PART_TABS.filter((tab) => tab !== "reserved" && tab !== "noPrice");
-export const statusesFor = (admin: boolean): readonly PartStatus[] =>
-  admin ? PART_STATUSES : PART_STATUSES.filter((status) => status !== "reserved");
+/** Admins get every tab. Everyone else only ever sees parts for sale, so they get no tabs at all. */
+export const tabsFor = (admin: boolean): PartTab[] => (admin ? PART_TABS : []);
+
+/** Statuses only admins see. Reserved parts look in stock to everyone else, and sold ones aren't shown. */
+export const isAvailable = (status: string) => status === "in_stock" || status === "reserved";
 
 /**
- * The query as a non-admin may ask it: in stock and reserved always go together, since reserved parts look in stock
- * to them, and "without price" is ignored. Applied by the page and again by the data layer, so editing the URL
- * doesn't get around it.
+ * The query as a non-admin may ask it: parts for sale only (reserved ones look in stock to them), no "without price"
+ * and the default order. Applied by the page and again by the data layer, so editing the URL doesn't get around it.
  */
 export function queryFor(query: PartsQuery, admin: boolean): PartsQuery {
   if (admin) return query;
-  const stock = query.statuses.some((status) => status === "in_stock" || status === "reserved");
-  const others = query.statuses.filter((status) => status !== "in_stock" && status !== "reserved");
-  const statuses: PartStatus[] = stock ? [...DEFAULT_STATUSES, ...others] : others;
-  return { ...query, statuses: PART_STATUSES.filter((status) => statuses.includes(status)), noPrice: false };
+  return { ...query, statuses: DEFAULT_STATUSES, noPrice: false, sort: DEFAULTS.sort };
 }
 
 const sameStatuses = (a: PartStatus[], b: PartStatus[]) => a.join() === b.join();
@@ -146,6 +148,10 @@ function codeParam(value: string | string[] | undefined): PartCode | null {
   return code === "with" || code === "without" ? code : null;
 }
 
+function sortParam(value: string | string[] | undefined): PartSort {
+  return PART_SORTS.find((sort) => sort === first(value)) ?? DEFAULTS.sort;
+}
+
 function statusParam(value: string | string[] | undefined) {
   const text = first(value);
   if (text === "all") return [];
@@ -174,6 +180,7 @@ export function parsePartsQuery(params: RawParams): PartsQuery {
     code: codeParam(params.code),
     category: idParam(params.category),
     model: idParam(params.model),
+    sort: sortParam(params.sort),
   };
 }
 
@@ -201,6 +208,7 @@ export function partsHref(query: PartsQuery, changes: Partial<PartsQuery> = {}) 
   if (next.pageSize !== DEFAULTS.pageSize) params.set("pageSize", String(next.pageSize));
   if (next.category) params.set("category", String(next.category));
   if (next.model) params.set("model", String(next.model));
+  if (next.sort !== DEFAULTS.sort) params.set("sort", next.sort);
   const search = params.toString();
   return search ? `/parts?${search}` : "/parts";
 }

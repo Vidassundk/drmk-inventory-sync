@@ -14,10 +14,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function CarsResults({ query }: { query: CarsQuery }) {
-  const { rows, total } = await listCars(query);
+  const { rows, total, admin } = await listCars(query);
   return (
     <>
-      <CarsTable rows={rows} />
+      <CarsTable rows={rows} admin={admin} />
       <Pagination
         page={query.page}
         pageSize={query.pageSize}

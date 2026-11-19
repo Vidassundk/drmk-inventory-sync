@@ -7,7 +7,6 @@ import { PartGallery } from "@/components/part-gallery";
 import { getCar, type CarDetail } from "@/lib/cars";
 import type { I18n } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n-server";
-import { viewerIsAdmin } from "@/lib/session";
 import { carPartsHref, type PartsQuery } from "@/lib/parts-query";
 
 const carName = (car: CarDetail) => [car.brand, car.model].filter(Boolean).join(" ") || `#${car.id}`;
@@ -64,7 +63,6 @@ export default async function CarPage({ params }: PageProps<"/cars/[id]">) {
   if (!car) notFound();
 
   const { stats } = car;
-  const admin = await viewerIsAdmin();
   const number = new Intl.NumberFormat(intlLocale);
   const years = car.yearStart ? `${car.yearStart} – ${car.yearEnd ?? ""}` : null;
   const facts = [
@@ -93,26 +91,27 @@ export default async function CarPage({ params }: PageProps<"/cars/[id]">) {
             thumbs={car.photos.map((photo) => photo.thumb)}
             alt={carName(car)}
           />
-          <section className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-            <h2 className="mb-2 flex items-baseline justify-between gap-3 font-semibold">
-              {t("car.stats")}
-              <span className="text-xs font-normal text-muted">{t("car.withVat")}</span>
-            </h2>
-            <StatRow
-              i18n={i18n}
-              label={t("car.partsTotal")}
-              value={stats.allValue}
-              count={stats.all}
-              href={partsHref({ statuses: ["in_stock", "reserved", "sold"] })}
-            />
-            <StatRow
-              i18n={i18n}
-              label={t("car.partsInStock")}
-              value={stats.inStockValue}
-              count={stats.inStock}
-              href={partsHref({ statuses: ["in_stock"] })}
-            />
-            {admin && (
+          {/* Only admins get statistics: everyone else doesn't see sales or reservations. */}
+          {stats && (
+            <section className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+              <h2 className="mb-2 flex items-baseline justify-between gap-3 font-semibold">
+                {t("car.stats")}
+                <span className="text-xs font-normal text-muted">{t("car.withVat")}</span>
+              </h2>
+              <StatRow
+                i18n={i18n}
+                label={t("car.partsTotal")}
+                value={stats.allValue}
+                count={stats.all}
+                href={partsHref({ statuses: ["in_stock", "reserved", "sold"] })}
+              />
+              <StatRow
+                i18n={i18n}
+                label={t("car.partsInStock")}
+                value={stats.inStockValue}
+                count={stats.inStock}
+                href={partsHref({ statuses: ["in_stock"] })}
+              />
               <StatRow
                 i18n={i18n}
                 label={t("car.partsReserved")}
@@ -120,23 +119,21 @@ export default async function CarPage({ params }: PageProps<"/cars/[id]">) {
                 count={stats.reserved}
                 href={partsHref({ statuses: ["reserved"] })}
               />
-            )}
-            <StatRow
-              i18n={i18n}
-              label={t("car.partsSold")}
-              value={stats.soldValue}
-              count={stats.sold}
-              href={partsHref({ statuses: ["sold"] })}
-            />
-            {admin && (
+              <StatRow
+                i18n={i18n}
+                label={t("car.partsSold")}
+                value={stats.soldValue}
+                count={stats.sold}
+                href={partsHref({ statuses: ["sold"] })}
+              />
               <StatRow
                 i18n={i18n}
                 label={t("car.partsUnpriced")}
                 count={stats.unpriced}
                 href={partsHref({ statuses: ["in_stock"], noPrice: true })}
               />
-            )}
-          </section>
+            </section>
+          )}
         </div>
         <section>
           <h2 className="mb-1 font-semibold">{t("car.info")}</h2>

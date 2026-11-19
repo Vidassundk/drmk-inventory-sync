@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
 import { partListings, parts, syncRuns, type Db } from "@drmk/db";
 import type { GetPartsParams, RrrClient, RrrPart } from "@drmk/rrr-client";
 import { exclusive } from "../lock.ts";
@@ -111,8 +111,15 @@ export function syncRrrFull(db: Db, rrr: RrrClient) {
         if (!more) break;
       }
 
-      if (stats.seen < total * MIN_SEEN_RATIO) {
-        throw new Error(`Saw ${stats.seen} of ${total} parts; refusing to mark anything removed`);
+      // Compare with what we already have too, not only RRR's own total: an API that answers "0 parts, 0 in total"
+      // (as it did on 2026-11-13, when access was cut) would otherwise mark every part removed.
+      const [{ known }] = await db
+        .select({ known: count() })
+        .from(partListings)
+        .where(and(eq(partListings.channelId, "rrr"), isNull(partListings.removedAt)));
+      const expected = Math.max(total, known);
+      if (stats.seen === 0 || stats.seen < expected * MIN_SEEN_RATIO) {
+        throw new Error(`Saw ${stats.seen} of ${expected} parts; refusing to mark anything removed`);
       }
       const removed = await db
         .update(partListings)

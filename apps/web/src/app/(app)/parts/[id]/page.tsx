@@ -55,9 +55,9 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
         <PartGallery urls={part.photoUrls} alt={part.name} />
         <dl className="divide-y divide-zinc-100 dark:divide-zinc-900">
           <Field label={t("columns.id")}>{part.rrrId}</Field>
-          <Field label={t("columns.status")}>{statusLabel(i18n, part.status)}</Field>
+          {part.admin && <Field label={t("columns.status")}>{statusLabel(i18n, part.status)}</Field>}
           <Field label={t("columns.price")}>{formatPrice(i18n, part)}</Field>
-          <Field label={t("columns.quality")}>{qualityLabel(i18n, part.quality)}</Field>
+          {part.admin && <Field label={t("columns.quality")}>{qualityLabel(i18n, part.quality)}</Field>}
           <Field label={t("part.manufacturerCode")}>{part.manufacturerCode}</Field>
           <Field label={t("part.visibleCode")}>{part.visibleCode}</Field>
           <Field label={t("part.otherCode")}>{part.otherCode}</Field>
@@ -76,8 +76,12 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
           <Field label={t("columns.adText")}>{part.notes}</Field>
           <Field label={t("columns.reservedBy")}>{userName(part.reservedByUser)}</Field>
           <Field label={t("columns.reservedAt")}>{part.reservedAt?.slice(0, 10)}</Field>
-          <Field label={t("columns.createdBy")}>{userName(part.createdByUser)}</Field>
-          <Field label={t("columns.listedAt")}>{part.listedAt?.slice(0, 10)}</Field>
+          {part.admin && (
+            <>
+              <Field label={t("columns.createdBy")}>{userName(part.createdByUser)}</Field>
+              <Field label={t("columns.listedAt")}>{part.listedAt?.slice(0, 10)}</Field>
+            </>
+          )}
           <Field label="RRR">
             {part.rrrUrl && (
               <a href={part.rrrUrl} target="_blank" rel="noreferrer" className="text-accent-text hover:underline">

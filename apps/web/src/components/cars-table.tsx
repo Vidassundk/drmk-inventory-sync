@@ -12,6 +12,8 @@ const text = (value: string | number | null) => (value === null || value === "" 
 
 const COLUMNS: {
   label: MessageKey;
+  /** Only admins see sales, so only they get the parts counts. */
+  adminOnly?: boolean;
   cell?: string;
   render: (car: CarRow, t: (key: MessageKey, values?: Record<string, number>) => string) => ReactNode;
 }[] = [
@@ -33,6 +35,7 @@ const COLUMNS: {
   },
   {
     label: "cars.parts",
+    adminOnly: true,
     render: (car, t) => (
       <div className="flex flex-col items-start gap-1">
         <AppLink href={`/parts?car=${car.id}&status=in_stock`} className={`${PILL} hover:text-accent-text`}>
@@ -58,12 +61,16 @@ const COLUMNS: {
     cell: "whitespace-nowrap tabular-nums",
     render: (car) => (car.powerKw ? `${car.powerKw} kW` : "–"),
   },
+  { label: "car.engineCode", cell: NOWRAP, render: (car) => text(car.engineCode) },
+  { label: "car.gearboxCode", cell: NOWRAP, render: (car) => text(car.gearboxCode) },
   { label: "cars.color", cell: NOWRAP, render: (car) => text(car.color) },
+  { label: "car.colorCode", cell: NOWRAP, render: (car) => text(car.colorCode) },
   { label: "cars.bodyType", cell: NOWRAP, render: (car) => text(car.bodyType) },
 ];
 
-export async function CarsTable({ rows }: { rows: CarRow[] }) {
+export async function CarsTable({ rows, admin }: { rows: CarRow[]; admin: boolean }) {
   const { t } = await getI18n();
+  const columns = admin ? COLUMNS : COLUMNS.filter((column) => !column.adminOnly);
 
   if (rows.length === 0) {
     return <p className="py-16 text-center text-sm text-muted">{t("cars.empty")}</p>;
@@ -74,7 +81,7 @@ export async function CarsTable({ rows }: { rows: CarRow[] }) {
       <table className="w-max min-w-full text-left text-sm">
         <thead className="border-b border-zinc-200 text-xs text-muted dark:border-zinc-800">
           <tr>
-            {COLUMNS.map((column) => (
+            {columns.map((column) => (
               <th key={column.label} scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
                 {t(column.label)}
               </th>
@@ -84,7 +91,7 @@ export async function CarsTable({ rows }: { rows: CarRow[] }) {
         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
           {rows.map((car) => (
             <tr key={car.id} className="align-top">
-              {COLUMNS.map((column) => (
+              {columns.map((column) => (
                 <td key={column.label} className={`px-3 py-2 ${column.cell ?? ""}`}>
                   {column.render(car, t)}
                 </td>

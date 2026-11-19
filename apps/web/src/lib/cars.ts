@@ -36,6 +36,9 @@ function carFilters(query: CarsQuery) {
   );
 }
 
+/** RRR leaves empty text fields as "" rather than null. */
+const rawText = (field: string) => sql<string | null>`nullif(trim(${rrrCars.raw}->>${field}), '')`;
+
 const carRowColumns = (locale: Locale) => ({
   id: rrrCars.id,
   brand: rrrCarModels.brand,
@@ -49,6 +52,10 @@ const carRowColumns = (locale: Locale) => ({
   color: carLabel(locale, "color", rrrCars.color),
   engineCc: rrrCars.engineCc,
   powerKw: rrrCars.powerKw,
+  // Only some cars have these filled in on RRR.
+  engineCode: rawText("car_engine_code"),
+  gearboxCode: rawText("car_gearbox_code"),
+  colorCode: rawText("car_color_code"),
   // Car photos stay on Ovoko for now: they're small thumbnails, and only some cars have them.
   photoUrl: sql<string | null>`coalesce(
     (select photo->>'thumb' from jsonb_array_elements(${rrrCars.raw}->'car_photo_gallery') photo
@@ -57,7 +64,10 @@ const carRowColumns = (locale: Locale) => ({
   photoCount: sql<number>`coalesce(jsonb_array_length(${rrrCars.raw}->'car_photo_gallery'), 0)`,
 });
 
-/** Our donor cars, newest first, with how many of their parts are in stock and sold, like RRR's "Likutis" and "Parduota". */
+/**
+ * Our donor cars, newest first. For admins, also how many of their parts are in stock and sold, like RRR's "Likutis"
+ * and "Parduota"; everyone else doesn't see sales, so they get no counts.
+ */
 export async function listCars(query: CarsQuery) {
   const db = await dataDb();
   const admin = await viewerIsAdmin();
@@ -82,15 +92,12 @@ export async function listCars(query: CarsQuery) {
 
   const ids = rows.map((row) => row.id);
   const counts =
-    ids.length === 0
+    ids.length === 0 || !admin
       ? []
       : await db
           .select({
             carId: parts.rrrCarId,
-            // Reserved parts look in stock to non-admins, so they count as in stock for them.
-            inStock: admin
-              ? sql<number>`count(*) filter (where ${parts.status} = 'in_stock')::int`
-              : sql<number>`count(*) filter (where ${parts.status} in ('in_stock', 'reserved'))::int`,
+            inStock: sql<number>`count(*) filter (where ${parts.status} = 'in_stock')::int`,
             sold: sql<number>`count(*) filter (where ${parts.status} = 'sold')::int`,
           })
           .from(parts)
@@ -100,6 +107,7 @@ export async function listCars(query: CarsQuery) {
 
   return {
     total,
+    admin,
     rows: rows.map((row) => ({ ...row, inStock: byCar.get(row.id)?.inStock ?? 0, sold: byCar.get(row.id)?.sold ?? 0 })),
   };
 }
@@ -135,13 +143,14 @@ export async function carFilterOptions() {
   return { fuels, gearboxes, wheelDrives, steerings, brands };
 }
 
-/** RRR leaves empty text fields as "" rather than null. */
-const rawText = (field: string) => sql<string | null>`nullif(trim(${rrrCars.raw}->>${field}), '')`;
-
-/** One car with everything RRR's car page shows that the API gives us, and what its parts are worth by status. */
+/**
+ * One car with everything RRR's car page shows that the API gives us. For admins, also what its parts are worth by
+ * status; everyone else doesn't see sales or reservations, so they get no statistics.
+ */
 export const getCar = cache(async (id: number) => {
   if (!Number.isSafeInteger(id) || id <= 0) return null;
   const db = await dataDb();
+  const admin = await viewerIsAdmin();
   const { locale } = await getI18n();
   // Templates, write-offs and parts under audit aren't stock, so they stay out of the totals.
   const counted = inArray(parts.status, ["in_stock", "reserved", "sold"]);
@@ -154,9 +163,6 @@ export const getCar = cache(async (id: number) => {
         yearEnd: rrrCarModels.yearEnd,
         mileageKm: sql<number | null>`nullif(${rrrCars.raw}->>'car_mileage', '')::int`,
         vin: rawText("car_body_number"),
-        engineCode: rawText("car_engine_code"),
-        gearboxCode: rawText("car_gearbox_code"),
-        colorCode: rawText("car_color_code"),
         interior: rawText("car_interior"),
         defects: rawText("defectation_notes"),
         // The watermarked 1024px copy for viewing, the small one for thumbnails.
@@ -172,36 +178,26 @@ export const getCar = cache(async (id: number) => {
       .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
       .where(eq(rrrCars.id, id))
       .limit(1),
-    db
-      .select({
-        all: sql<number>`count(*) filter (where ${counted})::int`,
-        allValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${counted}), 0)::float`,
-        inStock: sql<number>`count(*) filter (where ${parts.status} = 'in_stock')::int`,
-        inStockValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'in_stock'), 0)::float`,
-        reserved: sql<number>`count(*) filter (where ${parts.status} = 'reserved')::int`,
-        reservedValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'reserved'), 0)::float`,
-        sold: sql<number>`count(*) filter (where ${parts.status} = 'sold')::int`,
-        soldValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'sold'), 0)::float`,
-        unpriced: sql<number>`count(*) filter (where ${parts.status} = 'in_stock' and coalesce(${parts.price}, 0) = 0)::int`,
-      })
-      .from(parts)
-      .where(and(eq(parts.rrrCarId, id), isNull(parts.deletedAt))),
+    admin
+      ? db
+          .select({
+            all: sql<number>`count(*) filter (where ${counted})::int`,
+            allValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${counted}), 0)::float`,
+            inStock: sql<number>`count(*) filter (where ${parts.status} = 'in_stock')::int`,
+            inStockValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'in_stock'), 0)::float`,
+            reserved: sql<number>`count(*) filter (where ${parts.status} = 'reserved')::int`,
+            reservedValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'reserved'), 0)::float`,
+            sold: sql<number>`count(*) filter (where ${parts.status} = 'sold')::int`,
+            soldValue: sql<number>`coalesce(sum(${parts.price}) filter (where ${parts.status} = 'sold'), 0)::float`,
+            unpriced: sql<number>`count(*) filter (where ${parts.status} = 'in_stock' and coalesce(${parts.price}, 0) = 0)::int`,
+          })
+          .from(parts)
+          .where(and(eq(parts.rrrCarId, id), isNull(parts.deletedAt)))
+      : [null],
   ]);
 
   if (!car) return null;
-  if (await viewerIsAdmin()) return { ...car, stats };
-  // Non-admins see reserved parts as in stock, and nothing about parts without a price.
-  return {
-    ...car,
-    stats: {
-      ...stats,
-      inStock: stats.inStock + stats.reserved,
-      inStockValue: stats.inStockValue + stats.reservedValue,
-      reserved: 0,
-      reservedValue: 0,
-      unpriced: 0,
-    },
-  };
+  return { ...car, stats: stats ?? null };
 });
 
 export type CarDetail = NonNullable<Awaited<ReturnType<typeof getCar>>>;

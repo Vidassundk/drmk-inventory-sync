@@ -26,7 +26,7 @@ import { dataDb, viewerIsAdmin } from "./session";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
 import { carOption, carTitle } from "./part-format";
-import { queryFor, type PartsQuery } from "./parts-query";
+import { isAvailable, queryFor, type PartSort, type PartsQuery } from "./parts-query";
 
 export const MAX_SEARCH_TERMS = 5;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -352,24 +352,43 @@ function searchFilter(q: string) {
   return or(text, byRrrId);
 }
 
+/**
+ * The list's order, ending with the id so pages never repeat or skip a part. Newest first must match the
+ * parts_listed_idx order, or Postgres sorts the whole table for every page. The others sort the filtered parts,
+ * which only admins can ask for.
+ */
+function partsOrder(sort: PartSort, locale: Locale) {
+  switch (sort) {
+    case "oldest":
+      return [sql`${parts.listedAt} asc nulls last`, sql`${parts.id} asc`];
+    case "az":
+      return [sql`${partName(locale)} asc`, sql`${parts.id} asc`];
+    case "za":
+      return [sql`${partName(locale)} desc`, sql`${parts.id} desc`];
+    default:
+      return [sql`${parts.listedAt} desc nulls last`, sql`${parts.id} desc nulls last`];
+  }
+}
+
 export async function listParts(requested: PartsQuery) {
   const admin = await viewerIsAdmin();
   const query = queryFor(requested, admin);
-  const { q, page, pageSize, category, model } = query;
+  const { q, page, pageSize, category, model, sort } = query;
   const db = await dataDb();
   const { locale } = await getI18n();
   const where = and(isNull(parts.deletedAt), filtersFor(query), searchFilter(q), similarFilter({ category, model }));
 
-  // Must match the parts_listed_idx order, or Postgres sorts the whole table for every page.
-  const newestFirst = [sql`${parts.listedAt} desc nulls last`, sql`${parts.id} desc nulls last`];
+  const order = partsOrder(sort, locale);
+  const byName = sort === "az" || sort === "za";
 
   // Find the page's ids from the index alone, then join only those rows. Joining first would
   // also join every row OFFSET skips, which made deep pages take seconds.
-  const pageIds = db
-    .select({ id: parts.id })
-    .from(parts)
+  const pageQuery = db.select({ id: parts.id }).from(parts).$dynamic();
+  // Sorting by name needs the category, since that's where most names come from.
+  if (byName) pageQuery.leftJoin(rrrCategories, eq(rrrCategories.id, parts.rrrCategoryId));
+  const pageIds = pageQuery
     .where(where)
-    .orderBy(...newestFirst)
+    .orderBy(...order)
     .limit(pageSize)
     .offset((page - 1) * pageSize)
     .as("page_ids");
@@ -406,7 +425,7 @@ export async function listParts(requested: PartsQuery) {
       .leftJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
       .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
       .leftJoin(rrrCategories, eq(rrrCategories.id, parts.rrrCategoryId))
-      .orderBy(...newestFirst),
+      .orderBy(...order),
     db.select({ total: count() }).from(parts).where(where),
   ]);
 
@@ -540,8 +559,12 @@ export const getPart = cache(async (id: string) => {
   ]);
 
   if (!part) return null;
+  const admin = await viewerIsAdmin();
+  // Everyone else only sees parts for sale, so a sold or removed part isn't there for them, even by its address.
+  if (!admin && (!isAvailable(part.status) || part.deletedAt)) return null;
   return {
-    ...hideReservation(part, await viewerIsAdmin()),
+    ...hideReservation(part, admin),
+    admin,
     photoUrls: photos.map(imageUrl).filter((url) => url !== null),
   };
 });
