@@ -1,11 +1,11 @@
 "use client";
 
-import { useOptimistic, useTransition, type MouseEvent, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import type { MouseEvent, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { AppLink } from "@/components/app-link";
 import { CarsIcon, PartsIcon, ReservationsIcon, SyncIcon, UsersIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
-import { PageLoader } from "@/components/spinner";
+import { useNavigation } from "@/components/navigation";
 
 type NavLink = {
   href: string;
@@ -36,21 +36,16 @@ const SETTINGS: NavSection = {
  */
 export function MainNav({ isAdmin }: { isAdmin: boolean }) {
   const { t } = useI18n();
-  const router = useRouter();
   const pathname = usePathname();
-  // Pages load from the server with no prefetching, so a click would otherwise show nothing until the next page
-  // arrives. Instead the item lights up at once and a spinner shows until the page is ready.
-  const [pending, startTransition] = useTransition();
-  const [current, setCurrent] = useOptimistic(pathname);
+  // The clicked item lights up at once, and the content area shows that page's skeleton until it's ready.
+  const { pendingHref, go } = useNavigation();
+  const current = pendingHref ?? pathname;
 
   function open(event: MouseEvent<HTMLAnchorElement>, href: string) {
     // Leave new-tab and other modified clicks to the browser.
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    startTransition(() => {
-      setCurrent(href);
-      router.push(href);
-    });
+    go(href);
   }
   const sections = isAdmin ? [INVENTORY, SETTINGS] : [INVENTORY];
 
@@ -78,7 +73,6 @@ export function MainNav({ isAdmin }: { isAdmin: boolean }) {
           ))}
         </div>
       ))}
-      {pending && <PageLoader label={t("nav.loading")} />}
     </nav>
   );
 }

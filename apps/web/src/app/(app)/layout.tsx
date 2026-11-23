@@ -3,6 +3,7 @@ import { AppLink } from "@/components/app-link";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Logo } from "@/components/logo";
 import { MainNav } from "@/components/main-nav";
+import { NavigationProvider, PageContent } from "@/components/navigation";
 import { PartsSearch } from "@/components/parts-search";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
@@ -13,7 +14,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireUser();
 
   return (
-    <>
+    <NavigationProvider>
       {/* On wide screens the logo sits in its own square above the sidebar, sharing its border line. */}
       <header className="sticky top-0 z-30 flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-zinc-200 bg-background px-4 py-3.5 md:h-16 md:flex-nowrap md:gap-x-6 md:p-0 md:pr-6 dark:border-zinc-800">
         <AppLink
@@ -44,10 +45,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Crossfades on a language change only, so tabs and pagination stay instant. */}
           <ViewTransition default="none" update={{ "language-change": "language-fade", default: "none" }}>
-            {children}
+            <PageContent>{children}</PageContent>
           </ViewTransition>
         </div>
       </div>
-    </>
+    </NavigationProvider>
   );
 }

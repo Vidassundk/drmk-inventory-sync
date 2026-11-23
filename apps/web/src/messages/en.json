@@ -263,6 +263,5 @@
   "sync.col.started": "Started",
   "sync.col.duration": "Duration",
   "sync.col.changes": "Changes",
-  "sync.seenChanged": "seen {seen}, changed {changed}, removed {removed}",
-  "nav.loading": "Loading…"
+  "sync.seenChanged": "seen {seen}, changed {changed}, removed {removed}"
 }

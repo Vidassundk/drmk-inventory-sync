@@ -263,6 +263,5 @@
   "sync.col.started": "Pradėta",
   "sync.col.duration": "Trukmė",
   "sync.col.changes": "Pakeitimai",
-  "sync.seenChanged": "peržiūrėta {seen}, pakeista {changed}, pašalinta {removed}",
-  "nav.loading": "Įkeliama…"
+  "sync.seenChanged": "peržiūrėta {seen}, pakeista {changed}, pašalinta {removed}"
 }
