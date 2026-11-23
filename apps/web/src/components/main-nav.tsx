@@ -1,10 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { useOptimistic, useTransition, type MouseEvent, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { AppLink } from "@/components/app-link";
 import { CarsIcon, PartsIcon, ReservationsIcon, SyncIcon, UsersIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
+import { PageLoader } from "@/components/spinner";
 
 type NavLink = {
   href: string;
@@ -35,7 +36,22 @@ const SETTINGS: NavSection = {
  */
 export function MainNav({ isAdmin }: { isAdmin: boolean }) {
   const { t } = useI18n();
+  const router = useRouter();
   const pathname = usePathname();
+  // Pages load from the server with no prefetching, so a click would otherwise show nothing until the next page
+  // arrives. Instead the item lights up at once and a spinner shows until the page is ready.
+  const [pending, startTransition] = useTransition();
+  const [current, setCurrent] = useOptimistic(pathname);
+
+  function open(event: MouseEvent<HTMLAnchorElement>, href: string) {
+    // Leave new-tab and other modified clicks to the browser.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    startTransition(() => {
+      setCurrent(href);
+      router.push(href);
+    });
+  }
   const sections = isAdmin ? [INVENTORY, SETTINGS] : [INVENTORY];
 
   return (
@@ -52,7 +68,8 @@ export function MainNav({ isAdmin }: { isAdmin: boolean }) {
             <AppLink
               key={href}
               href={href}
-              aria-current={pathname.startsWith(href) ? "page" : undefined}
+              onClick={(event) => open(event, href)}
+              aria-current={current.startsWith(href) ? "page" : undefined}
               className="flex items-center gap-2.5 rounded-md px-3 py-2 text-muted hover:bg-zinc-100 hover:text-foreground aria-[current=page]:bg-zinc-100 aria-[current=page]:font-medium aria-[current=page]:text-accent-text dark:hover:bg-zinc-900 dark:aria-[current=page]:bg-zinc-900"
             >
               {icon}
@@ -61,6 +78,7 @@ export function MainNav({ isAdmin }: { isAdmin: boolean }) {
           ))}
         </div>
       ))}
+      {pending && <PageLoader label={t("nav.loading")} />}
     </nav>
   );
 }

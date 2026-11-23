@@ -3,7 +3,7 @@
 import { addTransitionType, useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n-provider";
-import { Spinner } from "@/components/spinner";
+import { PageLoader } from "@/components/spinner";
 import { LOCALE_COOKIE, LOCALES, type Locale } from "@/lib/i18n";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
@@ -50,15 +50,7 @@ export function LanguageSwitcher() {
           </button>
         ))}
       </div>
-      {pending && (
-        <div
-          role="status"
-          aria-label={t("language.changing")}
-          className="pointer-events-none fixed inset-0 z-50 grid place-items-center"
-        >
-          <Spinner className="size-8" />
-        </div>
-      )}
+      {pending && <PageLoader label={t("language.changing")} />}
     </>
   );
 }

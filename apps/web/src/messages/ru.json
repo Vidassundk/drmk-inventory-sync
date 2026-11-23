@@ -263,5 +263,6 @@
   "sync.col.started": "Начато",
   "sync.col.duration": "Длительность",
   "sync.col.changes": "Изменения",
-  "sync.seenChanged": "просмотрено {seen}, изменено {changed}, удалено {removed}"
+  "sync.seenChanged": "просмотрено {seen}, изменено {changed}, удалено {removed}",
+  "nav.loading": "Загрузка…"
 }
