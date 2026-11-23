@@ -6,16 +6,18 @@ Its name, logo, domains and email sender are in `brand/brand.json`, read at buil
 
 ## Layout
 
-| Path                                     | What it is                                                   |
-| ---------------------------------------- | ------------------------------------------------------------ |
-| `src/app/(app)`                          | The signed-in pages: parts, cars and, for admins, users      |
-| `src/app/login`                          | The sign-in page                                             |
-| `src/app/api/auth`                       | Better Auth's endpoints: send a code, sign in, sign out      |
-| `src/app/api/cars`, `api/car-models`     | Options for the car and model filters, loaded as they scroll |
-| `src/lib/parts.ts`, `src/lib/cars.ts`    | Every inventory query                                        |
-| `src/lib/auth.tsx`, `src/lib/session.ts` | Sign-in setup, and the checks pages and queries use          |
-| `src/emails`                             | The sign-in code and invite emails                           |
-| `src/messages`                           | Interface text in Lithuanian, English and Russian            |
+| Path                                                               | What it is                                                            |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `src/app/(app)`                                                    | The signed-in pages: parts, cars, reservations and, for admins, users |
+| `src/app/login`                                                    | The sign-in page                                                      |
+| `src/app/api/auth`                                                 | Better Auth's endpoints: send a code, sign in, sign out               |
+| `src/app/api/cars`, `api/car-models`                               | Options for the car and model filters, loaded as they scroll          |
+| `src/lib/parts.ts`, `src/lib/cars.ts`                              | Every inventory query                                                 |
+| `src/lib/reservations.ts`, `src/app/(app)/reservations/actions.ts` | Reservation lists, and reserving and releasing parts on RRR           |
+| `src/lib/rrr.ts`                                                   | The RRR API client, used only for reservations                        |
+| `src/lib/auth.tsx`, `src/lib/session.ts`                           | Sign-in setup, and the checks pages and queries use                   |
+| `src/emails`                                                       | The sign-in code and invite emails                                    |
+| `src/messages`                                                     | Interface text in Lithuanian, English and Russian                     |
 
 ## Running it locally
 
@@ -50,6 +52,20 @@ npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put RESEND_API_KEY
 ```
 
+Reserving parts also needs the RRR login, the same values as in the root `.env`:
+
+```bash
+npx wrangler secret put RRR_USERNAME
+```
+
+```bash
+npx wrangler secret put RRR_PASSWORD
+```
+
+```bash
+npx wrangler secret put RRR_USER_TOKEN
+```
+
 Emails go out from the brand's `emailFrom`, on a domain verified in Resend. `EMAIL_FROM` as a Worker variable overrides it.
 
 ## Sign-in
@@ -62,7 +78,8 @@ Emails go out from the brand's `emailFrom`, on a domain verified in Resend. `EMA
 ## Rules for new code
 
 - **Read inventory through `dataDb()`**, not `getDb()`. It checks for a signed-in person first, which also covers page titles and `/api` routes.
-- **Apply the viewer's role in the data layer.** Non-admins don't see reservations or parts without a price: `queryFor` in `lib/parts-query.ts` and `hideReservation` in `lib/parts.ts`. Hiding something only in the page isn't enough.
+- **Apply the viewer's role in the data layer.** Guests only see parts in stock, plus their own reserved parts by address: `queryFor` in `lib/parts-query.ts`, and `listParts`, `getPart` and `hideReservation` in `lib/parts.ts`. Hiding something only in the page isn't enough.
+- **Check RRR before changing a reservation.** Reservation actions read the part's status from RRR first and save it, then act on that. Never reserve from our copy's status alone: it can be up to 15 minutes old.
 - **Use `AppLink`, not `next/link`.** Prefetching every link in a table used up the database's connections.
 - **Mind the connection limits.** Hyperdrive keeps at most 5 connections to Supabase's session pooler, which allows 15 in all. Each request opens one client and closes it when the response is done.
 - **Leave `cacheComponents` off.** Pages hang in the Workers runtime with it on.

@@ -52,13 +52,21 @@ Invite-only sign-in with emailed codes, built to replace Cloudflare Access.
 - [x] Resend: the brand's domain added as a sending domain, with its DNS records in Cloudflare
 - [x] Worker secrets: `BETTER_AUTH_SECRET` and `RESEND_API_KEY`
 - [x] Admin Users page: invite, resend, remove
-- [x] Non-admins don't see reservations or parts without a price
+- [x] Guests see only parts in stock, without status, quality, sold parts or car statistics
 - [ ] Deploy, sign in as the first admin, and invite the team
 - [ ] Once sign-in works on the new domain, remove Cloudflare Access from it, then retire `app.vidasstirbys.com`
-- [ ] A customer role for outside guests: in-stock parts only, without internal notes, creator or car statistics
 - [ ] Change someone's role from the Users page (only at invite time now)
 - [ ] After sign-in, return to the page that was asked for instead of always the parts list
 - [ ] A PNG logo in the emails (only text now: SVG doesn't show in Gmail)
+
+## Reservations
+
+- [x] Reservation lists per guest, kept in sync with RRR both ways
+- [ ] Set the RRR secrets on the Worker: `RRR_USERNAME`, `RRR_PASSWORD`, `RRR_USER_TOKEN`
+- [ ] Reserve from the parts table too, not only from the part page
+- [ ] Show the client's name in the parts table's "Rezervavo" column instead of the RRR user
+- [ ] History of past reservations, if the team wants it
+- [ ] Maybe write the client's name to RRR's `internal_notes`, if it won't overwrite the team's notes
 
 ## Security
 
@@ -76,5 +84,5 @@ Invite-only sign-in with emailed codes, built to replace Cloudflare Access.
 
 ## On hold
 
-- [ ] Edit stock from the dashboard and push changes to RRR
+- [ ] Edit other stock details from the dashboard and push changes to RRR
 - [ ] List parts on several marketplaces, with our database as the source of truth

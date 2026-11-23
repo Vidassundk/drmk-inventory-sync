@@ -19,6 +19,17 @@ export const PART_STATUS = {
 
 export type RrrPartStatus = (typeof PART_STATUS)[keyof typeof PART_STATUS];
 
+/** A part from /get/part/{id}. reserved_user is the RRR user who reserved it ("0" if nobody). */
+export type RrrPartSnapshot = {
+  id: string;
+  name: string;
+  price: string;
+  status: string;
+  reserved_user: string;
+  reserved_date: string;
+  [field: string]: unknown;
+};
+
 export type RrrPart = {
   id: string;
   id_bridge: string | number;

@@ -23,6 +23,7 @@ await client.end();
 | `rrr_car_models` | RRR's brand and model catalog                                                |
 | `rrr_categories` | RRR's category tree in three languages, with each category's full path       |
 | `sync_runs`      | History of sync jobs, with their stats and cursor                            |
+| `reservations`   | Who a reserved part is set aside for. RRR records only that it's reserved    |
 | `auth_*`         | Dashboard sign-in (Better Auth): users, sessions, codes and rate limits      |
 
 Dashboard access is invite-only: a row in `auth_users` is what lets an email sign in. Add the first admin with `pnpm users:add you@example.com admin`; they invite everyone else from the dashboard's Users page.

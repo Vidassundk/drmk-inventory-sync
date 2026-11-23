@@ -314,3 +314,25 @@ export const authRateLimits = pgTable("auth_rate_limits", {
   count: integer("count").notNull(),
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 }).enableRLS();
+
+/**
+ * Who a reserved part is set aside for. RRR knows only that a part is reserved, so the client lives here: one row per
+ * part, for as long as RRR has it reserved. Reserved parts with no row, or with no user, are "no client yet": reserved
+ * straight on RRR, or their client's account was removed. The sync drops a row once RRR no longer has the part
+ * reserved.
+ */
+export const reservations = pgTable(
+  "reservations",
+  {
+    partId: uuid("part_id")
+      .primaryKey()
+      .references(() => parts.id, { onDelete: "cascade" }),
+    /** The guest it's for. Null when their account was removed; the part stays reserved until an admin acts. */
+    userId: text("user_id").references(() => authUsers.id, { onDelete: "set null" }),
+    /** The admin who reserved or last reassigned it. */
+    reservedBy: text("reserved_by").references(() => authUsers.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("reservations_user_idx").on(t.userId)],
+).enableRLS();

@@ -11,6 +11,8 @@ import type {
   RrrNames,
   RrrPagination,
   RrrPart,
+  RrrPartSnapshot,
+  RrrPartStatus,
 } from "./types.ts";
 
 export class RrrApiError extends Error {
@@ -124,13 +126,32 @@ export class RrrClient {
     return readList<RrrCategory>(await this.post("get/categories", new URLSearchParams()));
   }
 
+  /**
+   * POST /get/part/{id}: one part as RRR has it right now, or null if there's no such part. For checking a part just
+   * before changing it. Uses the older format, so only the fields both formats share are typed.
+   */
+  async getPart(id: string | number): Promise<RrrPartSnapshot | null> {
+    const body = await this.post(`get/part/${encodeURIComponent(String(id))}`, new URLSearchParams());
+    const [[part] = []] = (body.list ?? []) as RrrPartSnapshot[][];
+    return part ?? null;
+  }
+
+  /** POST /crm/changePartStatus: sets a part's status, such as reserving it (see PART_STATUS). Changes live data. */
+  async changePartStatus(id: string | number, status: RrrPartStatus) {
+    await this.post("crm/changePartStatus", new URLSearchParams(), { part_id: String(id), status });
+  }
+
   /** A code table as code -> its names in each language. */
   async getLookup(name: RrrLookup) {
     const body = await this.post(`get/${name}`, new URLSearchParams());
     return (body.list ?? {}) as Record<string, RrrNames>;
   }
 
-  private async post(path: string, query: URLSearchParams): Promise<Record<string, unknown>> {
+  private async post(
+    path: string,
+    query: URLSearchParams,
+    fields: Record<string, string> = {},
+  ): Promise<Record<string, unknown>> {
     const url = new URL(path, this.baseUrl);
     url.search = query.toString();
 
@@ -141,6 +162,7 @@ export class RrrClient {
         username: this.credentials.username,
         password: this.credentials.password,
         user_token: this.credentials.userToken,
+        ...fields,
       }),
     });
 

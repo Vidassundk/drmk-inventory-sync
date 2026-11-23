@@ -19,14 +19,15 @@ import {
   rrrCarModels,
   rrrCars,
   rrrCategories,
+  reservations,
   sql,
   type SQLWrapper,
 } from "@drmk/db";
-import { dataDb, viewerIsAdmin } from "./session";
+import { dataDb, isAdmin, requireUser, viewerIsAdmin } from "./session";
 import type { Locale } from "./i18n";
 import { getI18n } from "./i18n-server";
 import { carOption, carTitle } from "./part-format";
-import { isAvailable, queryFor, type PartSort, type PartsQuery } from "./parts-query";
+import { queryFor, type PartSort, type PartsQuery } from "./parts-query";
 
 export const MAX_SEARCH_TERMS = 5;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -61,7 +62,7 @@ const categoryPath = (locale: Locale) =>
   inLanguage(locale, { lt: rrrCategories.path, en: rrrCategories.pathEn, ru: rrrCategories.pathRu });
 
 /** Part names come from their category, so they translate with it. A name someone typed by hand stays as written. */
-const partName = (locale: Locale) =>
+export const partName = (locale: Locale) =>
   sql<string>`case when ${parts.name} = ${rrrCategories.name} then ${categoryName(locale)} else ${parts.name} end`;
 
 export const carLabel = (locale: Locale, field: string, lithuanian: SQLWrapper) =>
@@ -92,7 +93,12 @@ export function imageUrl(image: { storageKey: string | null; sourceUrl: string |
   return image.sourceUrl;
 }
 
-const inStock = () => inArray(parts.status, ["in_stock", "reserved"]);
+/**
+ * Parts for sale. For admins that includes reserved ones. Everyone else doesn't see reserved parts at all: they're set
+ * aside for someone, and only that person sees them, on their reservations page.
+ */
+const inStock = (admin = true) =>
+  admin ? inArray(parts.status, ["in_stock", "reserved"]) : eq(parts.status, "in_stock");
 
 function filtersFor({ statuses, priceMin, priceMax, noPrice, brand, car, qualities, code }: PartsQuery) {
   const brandCarIds = sql`(
@@ -282,7 +288,7 @@ const groupKey = ({ categoryId, carModelId }: StockGroup) =>
  * RRR's "Sandėlyje": how many parts are in stock with the same category and car model, and their average
  * price leaving out parts with no price. Runs for one page of rows, so it costs one small grouped query.
  */
-async function stockFor(groups: StockGroup[]) {
+async function stockFor(groups: StockGroup[], admin: boolean) {
   const pairs = new Map(
     groups.flatMap((group) => {
       const key = groupKey(group);
@@ -304,7 +310,7 @@ async function stockFor(groups: StockGroup[]) {
     .innerJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
     .where(
       and(
-        inStock(),
+        inStock(admin),
         isNull(parts.deletedAt),
         sql`(${parts.rrrCategoryId}, ${rrrCars.modelId}) in (${sql.join(
           [...pairs.values()].map((pair) => sql`(${pair.categoryId}::int, ${pair.carModelId}::int)`),
@@ -376,7 +382,10 @@ export async function listParts(requested: PartsQuery) {
   const { q, page, pageSize, category, model, sort } = query;
   const db = await dataDb();
   const { locale } = await getI18n();
-  const where = and(isNull(parts.deletedAt), filtersFor(query), searchFilter(q), similarFilter({ category, model }));
+  // Everyone else only sees parts in stock: queryFor keeps their status filter at the default, and reserved parts
+  // are left out here.
+  const statuses = admin ? query : { ...query, statuses: ["in_stock" as const] };
+  const where = and(isNull(parts.deletedAt), filtersFor(statuses), searchFilter(q), similarFilter({ category, model }));
 
   const order = partsOrder(sort, locale);
   const byName = sort === "az" || sort === "za";
@@ -429,7 +438,7 @@ export async function listParts(requested: PartsQuery) {
     db.select({ total: count() }).from(parts).where(where),
   ]);
 
-  const stock = await stockFor(rows);
+  const stock = await stockFor(rows, admin);
 
   return {
     total,
@@ -473,7 +482,7 @@ export async function listSimilarParts(part: StockGroup & { id: string }, limit:
   const admin = await viewerIsAdmin();
   const { locale } = await getI18n();
   const where = and(
-    inStock(),
+    inStock(admin),
     isNull(parts.deletedAt),
     similarFilter({ category: categoryId, model: carModelId }),
     ne(parts.id, part.id),
@@ -559,9 +568,17 @@ export const getPart = cache(async (id: string) => {
   ]);
 
   if (!part) return null;
-  const admin = await viewerIsAdmin();
-  // Everyone else only sees parts for sale, so a sold or removed part isn't there for them, even by its address.
-  if (!admin && (!isAvailable(part.status) || part.deletedAt)) return null;
+  const session = await requireUser();
+  const admin = isAdmin(session);
+  // Everyone else sees parts in stock, and reserved ones only if they're reserved for them. Anything else isn't there
+  // for them, even by its address.
+  if (!admin) {
+    if (part.deletedAt) return null;
+    if (part.status === "reserved") {
+      const [reservation] = await db.select().from(reservations).where(eq(reservations.partId, part.id));
+      if (reservation?.userId !== session.user.id) return null;
+    } else if (part.status !== "in_stock") return null;
+  }
   return {
     ...hideReservation(part, admin),
     admin,

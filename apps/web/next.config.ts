@@ -32,7 +32,7 @@ function readBrand(): Record<string, string> {
 }
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@drmk/db"],
+  transpilePackages: ["@drmk/db", "@drmk/rrr-client"],
   env: readBrand(),
   // cacheComponents and partialPrefetching stay off: pages hang in the Cloudflare Workers runtime with them on.
   turbopack: {

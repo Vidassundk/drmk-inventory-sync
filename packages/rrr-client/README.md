@@ -18,6 +18,13 @@ for await (const part of rrr.iteratePartsUpdatedSince("2026-11-01 00:00:00")) {
 }
 ```
 
+Two calls change data on RRR, used by the dashboard's reservations:
+
+```ts
+const part = await rrr.getPart(970); // one part as RRR has it right now, or null
+await rrr.changePartStatus(970, PART_STATUS.reserved); // and PART_STATUS.inStock to release it
+```
+
 Failed requests throw `RrrApiError`, which carries the HTTP status and RRR's status code.
 
 To check your credentials, from the repo root:
@@ -37,3 +44,7 @@ These were found by testing the live API, and some aren't in its docs.
 - `sort` accepts only `id`, `create_date` and `updated_at`.
 - `updated_at` isn't documented. It's a Europe/Vilnius time with no timezone.
 - Sold parts stay in the list. Hard deletes aren't reported anywhere, including `/get/logs`.
+- `/crm/changePartStatus` needs CRM write access on the account. Tested on 2026-11-23: reserving and releasing one part worked.
+- A part reserved through the API has `reserved_user: "0"`. Staff reserving on RRR get their own user number.
+- `reserved_date` stays set after a part is released, so trust it only while the status is reserved.
+- An account that has lost API access still gets `R200` with no parts and a total of 0, not an error.

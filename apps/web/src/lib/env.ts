@@ -1,7 +1,15 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { BRAND_DOMAINS } from "./brand";
 
-type Setting = "BETTER_AUTH_SECRET" | "RESEND_API_KEY" | "EMAIL_FROM" | "EMAIL_LOG_ONLY";
+type Setting =
+  | "BETTER_AUTH_SECRET"
+  | "RESEND_API_KEY"
+  | "EMAIL_FROM"
+  | "EMAIL_LOG_ONLY"
+  | "RRR_USERNAME"
+  | "RRR_PASSWORD"
+  | "RRR_USER_TOKEN"
+  | "RRR_BASE_URL";
 
 /** A Worker variable or secret. Local runs also fall back to the root .env, which next.config.ts loads. */
 export function serverEnv(name: Setting): string | undefined {

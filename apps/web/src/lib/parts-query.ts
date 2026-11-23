@@ -81,9 +81,6 @@ export const PART_TABS = Object.keys(TAB_FILTERS) as PartTab[];
 /** Admins get every tab. Everyone else only ever sees parts for sale, so they get no tabs at all. */
 export const tabsFor = (admin: boolean): PartTab[] => (admin ? PART_TABS : []);
 
-/** Statuses only admins see. Reserved parts look in stock to everyone else, and sold ones aren't shown. */
-export const isAvailable = (status: string) => status === "in_stock" || status === "reserved";
-
 /**
  * The query as a non-admin may ask it: parts for sale only (reserved ones look in stock to them), no "without price"
  * and the default order. Applied by the page and again by the data layer, so editing the URL doesn't get around it.

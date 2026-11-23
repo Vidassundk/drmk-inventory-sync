@@ -1,5 +1,5 @@
-import { and, count, desc, eq, inArray, isNotNull, isNull, ne, or } from "drizzle-orm";
-import { partListings, parts, syncRuns, type Db } from "@drmk/db";
+import { and, count, desc, eq, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
+import { partListings, parts, reservations, syncRuns, type Db } from "@drmk/db";
 import type { GetPartsParams, RrrClient, RrrPart } from "@drmk/rrr-client";
 import { exclusive } from "../lock.ts";
 import { externalUpdatedAt } from "./map.ts";
@@ -16,6 +16,8 @@ type Stats = Omit<PageStats, "unknownStatus"> & {
   pages: number;
   seen: number;
   removed: number;
+  /** Reservation list entries dropped because RRR no longer has their part reserved. */
+  reservationsEnded?: number;
   [unknownCode: `status_${string}`]: number;
 };
 
@@ -39,6 +41,22 @@ const shiftNaive = (ts: string, ms: number) =>
   new Date(new Date(`${ts.replace(" ", "T")}Z`).getTime() + ms).toISOString().slice(0, 19).replace("T", " ");
 const maxTs = (a: string | null, b: string | null) => (!a ? b : !b ? a : a > b ? a : b);
 
+/**
+ * A reservation list entry lasts only while RRR has the part reserved. Once it's sold, put back in stock or removed,
+ * on RRR or from the dashboard, the entry goes. Runs after every sync, so lists catch up within 15 minutes.
+ */
+async function endReservations(db: Db) {
+  const ended = await db
+    .delete(reservations)
+    .where(
+      sql`${reservations.partId} in (
+        select ${parts.id} from ${parts} where ${parts.status} <> 'reserved' or ${parts.deletedAt} is not null
+      )`,
+    )
+    .returning({ partId: reservations.partId });
+  return ended.length;
+}
+
 async function tracked(
   db: Db,
   kind: "full" | "incremental",
@@ -49,6 +67,7 @@ async function tracked(
   const started = Date.now();
   try {
     const cursor = await fn(run.id, stats);
+    stats.reservationsEnded = await endReservations(db);
     await db
       .update(syncRuns)
       .set({ status: "succeeded", cursor, stats, finishedAt: new Date() })

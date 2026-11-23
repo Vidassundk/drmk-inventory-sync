@@ -3,10 +3,10 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppLink } from "@/components/app-link";
-import { CarsIcon, PartsIcon, UsersIcon } from "@/components/icons";
+import { CarsIcon, PartsIcon, ReservationsIcon, UsersIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
 
-type NavLink = { href: string; label: "nav.parts" | "nav.cars" | "nav.users"; icon: ReactNode };
+type NavLink = { href: string; label: "nav.parts" | "nav.cars" | "nav.reservations" | "nav.users"; icon: ReactNode };
 type NavSection = { title: "nav.inventory" | "nav.settings"; links: NavLink[] };
 
 const INVENTORY: NavSection = {
@@ -14,6 +14,8 @@ const INVENTORY: NavSection = {
   links: [
     { href: "/parts", label: "nav.parts", icon: <PartsIcon /> },
     { href: "/cars", label: "nav.cars", icon: <CarsIcon /> },
+    // Admins see every list; guests see the parts reserved for them.
+    { href: "/reservations", label: "nav.reservations", icon: <ReservationsIcon /> },
   ],
 };
 const SETTINGS: NavSection = {

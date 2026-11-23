@@ -38,6 +38,9 @@ importers:
       '@drmk/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@drmk/rrr-client':
+        specifier: workspace:*
+        version: link:../../packages/rrr-client
       '@opennextjs/cloudflare':
         specifier: ^1.20.16
         version: 1.20.16(next@16.4.5(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.157.0(@cloudflare/workers-types@5.20261104.1)(@types/node@20.19.43))

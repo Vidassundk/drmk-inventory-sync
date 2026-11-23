@@ -85,3 +85,18 @@ export function UsersIcon({ className = "size-4" }: { className?: string }) {
     </svg>
   );
 }
+
+// A bookmark for reservations: parts set aside.
+export function ReservationsIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      className={`${ICON} ${className}`}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4.5 2h7a.5.5 0 0 1 .5.5v11.25l-4-2.75-4 2.75V2.5a.5.5 0 0 1 .5-.5Z" />
+    </svg>
+  );
+}

@@ -1,6 +1,6 @@
 # drmk-inventory-sync
 
-An ever-updating backup of a used auto-parts inventory on RRR (rrr.lt / Ovoko), with a dashboard to browse it. Every part, donor car and photo is copied into our own database and storage every 15 minutes, so the data is ours even if RRR is down or we move elsewhere. The dashboard is invite-only: admins invite team members and guests by email, and decide who sees what.
+An ever-updating backup of a used auto-parts inventory on RRR (rrr.lt / Ovoko), with a dashboard to browse it. Every part, donor car and photo is copied into our own database and storage every 15 minutes, so the data is ours even if RRR is down or we move elsewhere. The dashboard is invite-only: admins invite guests by email, decide who sees what, and keep reservation lists for them that stay in sync with RRR.
 
 ![Parts list](docs/screenshots/parts.png)
 
@@ -9,7 +9,8 @@ An ever-updating backup of a used auto-parts inventory on RRR (rrr.lt / Ovoko), 
 - **Keeps an up-to-date backup.** Parts sync from RRR every 15 minutes, with a full check every night that also catches deletions. Donor cars and RRR's catalogue (makes, models, categories) come along, translated into Lithuanian, English and Russian. Photos are copied to our own Cloudflare R2 storage. Removed parts are kept, marked as removed.
 - **Lets people browse it.** A fast dashboard for parts and cars, with search, filters, column settings, photo galleries and RRR's "Sandėlyje" stock figures. Lithuanian, English and Russian, in light and dark.
 - **Invites guests.** There are no passwords and no public sign-up. Someone gets in only when an admin invites their email. They sign in with a one-time code from an email in our own design.
-- **Gives admins control.** Admins invite people, choose their role and remove access. Admins also see what others don't: reservations and parts without a price.
+- **Gives admins control.** Admins invite people, choose their role and remove access. Admins also see what others don't: sold parts, reservations, parts without a price and the workshop's own details.
+- **Keeps reservation lists.** Admins set parts aside for a guest, and the part is reserved on RRR at the same time. Each guest sees their own list, and nobody else sees those parts. See [Reservations](#reservations).
 
 | Part                                         | Car                                            |
 | -------------------------------------------- | ---------------------------------------------- |
@@ -84,14 +85,33 @@ Without `RESEND_API_KEY` in `.env`, the sign-in code is printed in the terminal 
 
 Access is invite-only. A row in `auth_users` is what lets an email sign in, and an admin creates it from the Users page.
 
-|                                        | Admin | Everyone else                    |
-| -------------------------------------- | ----- | -------------------------------- |
-| Parts, cars, photos, prices and stock  | Yes   | Yes                              |
-| Reservations: status, who and when     | Yes   | No: reserved parts look in stock |
-| The "without price" tab and filter     | Yes   | No                               |
-| The Users page: invite, resend, remove | Yes   | No                               |
+Everyone who isn't an admin is a guest.
+
+|                                                          | Admin | Guest                           |
+| -------------------------------------------------------- | ----- | ------------------------------- |
+| Parts in stock, cars, photos and prices                  | Yes   | Yes                             |
+| Sold, written-off and other parts not for sale           | Yes   | No, not even by their address   |
+| Reserved parts                                           | All   | Only their own, on Rezervacijos |
+| Status, quality, "created by" and "listed" columns       | Yes   | No                              |
+| The "without price" tab and filter, and sorting the list | Yes   | No                              |
+| A car's parts counts and statistics                      | Yes   | No                              |
+| Reserving, reassigning and releasing parts               | Yes   | No                              |
+| The Users page: invite, resend, remove                   | Yes   | No                              |
 
 These rules run on the server, in the data layer, so editing the address doesn't get around them. Removing someone takes effect within 5 minutes.
+
+## Reservations
+
+Admins set parts aside for guests, and RRR stays the record of whether a part is reserved. Our database only adds who it's for, because RRR's API has no field for that.
+
+- **Reserving** happens on the part's page. The dashboard first asks RRR for the part's current status, then reserves it there, then records the guest here. If RRR says the part is already sold or reserved by someone else, nothing changes and the admin sees the real status.
+- **Releasing** puts the part back in stock on RRR and takes it off the list. Admins can also move a part to another guest.
+- **The Rezervacijos page** shows admins every list, with how many parts each has and their value. Guests see only their own list there.
+- **Changes made on RRR come through too.** The sync runs every 15 minutes and drops a list entry once RRR no longer has its part reserved: sold, put back in stock or removed. A part reserved straight on RRR shows under "No client yet", where an admin can assign it or release it.
+- **Nothing gets lost halfway.** If RRR refuses or can't be reached, nothing is saved here. If saving here fails after RRR reserved the part, it shows under "No client yet".
+- **Removing a guest's account** moves their parts to "No client yet". They stay reserved on RRR until an admin releases them.
+
+Reserving needs the RRR login as Worker secrets (see [Secrets](#secrets)), and RRR account access to its CRM write calls.
 
 ## Translations
 
@@ -129,12 +149,12 @@ Any of them can also be started by hand from the repo's Actions tab.
 
 ## Secrets
 
-| Where                                 | What                                                                                                                                                             |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.env`                                | Everything in `.env.example`, for local runs                                                                                                                     |
-| GitHub → Settings → Secrets → Actions | `DATABASE_URL`, `RRR_USERNAME`, `RRR_PASSWORD`, `RRR_USER_TOKEN`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` |
-| Cloudflare Worker `drmk-web`          | `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, set with `wrangler secret put`. The database comes through Hyperdrive                                                    |
-| Cloudflare Worker `drmk-scheduler`    | `GITHUB_TOKEN`                                                                                                                                                   |
+| Where                                 | What                                                                                                                                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.env`                                | Everything in `.env.example`, for local runs                                                                                                                                         |
+| GitHub → Settings → Secrets → Actions | `DATABASE_URL`, `RRR_USERNAME`, `RRR_PASSWORD`, `RRR_USER_TOKEN`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`                     |
+| Cloudflare Worker `drmk-web`          | `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, and `RRR_USERNAME`, `RRR_PASSWORD`, `RRR_USER_TOKEN` for reservations. Set with `wrangler secret put`. The database comes through Hyperdrive |
+| Cloudflare Worker `drmk-scheduler`    | `GITHUB_TOKEN`                                                                                                                                                                       |
 
 This repo is public, and so are its Actions logs. Don't commit credentials or print part data in job output.
 
@@ -142,9 +162,9 @@ The dashboard's build would otherwise copy every `.env` value into the Worker, s
 
 ## Status
 
-The backup, the dashboard and invite-only sign-in are done and running. Next steps and known gaps are in [TODO.md](TODO.md).
+The backup, the dashboard, invite-only sign-in and reservation lists are done. Reservations are the first change the dashboard writes back to RRR. Next steps and known gaps are in [TODO.md](TODO.md).
 
 Two larger plans are on hold for now:
 
-- Editing stock from the dashboard and pushing the changes back to RRR.
+- Editing other stock details from the dashboard and pushing them back to RRR.
 - Listing parts on several marketplaces, with our database as the source of truth.
