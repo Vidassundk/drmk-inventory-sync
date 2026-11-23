@@ -100,3 +100,19 @@ export function ReservationsIcon({ className = "size-4" }: { className?: string 
     </svg>
   );
 }
+
+// Two arrows in a circle, for the sync jobs.
+export function SyncIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      className={`${ICON} ${className}`}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M13 6.5A5 5 0 0 0 3.6 5M3 9.5A5 5 0 0 0 12.4 11" />
+      <path d="M3.25 2.5v2.75H6M12.75 13.5v-2.75H10" />
+    </svg>
+  );
+}

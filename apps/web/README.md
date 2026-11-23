@@ -15,6 +15,7 @@ Its name, logo, domains and email sender are in `brand/brand.json`, read at buil
 | `src/lib/parts.ts`, `src/lib/cars.ts`                              | Every inventory query                                                 |
 | `src/lib/reservations.ts`, `src/app/(app)/reservations/actions.ts` | Reservation lists, and reserving and releasing parts on RRR           |
 | `src/lib/rrr.ts`                                                   | The RRR API client, used only for reservations                        |
+| `src/lib/sync-status.ts`                                           | The admin Sinchronizavimas page's numbers, from our database only     |
 | `src/lib/auth.tsx`, `src/lib/session.ts`                           | Sign-in setup, and the checks pages and queries use                   |
 | `src/emails`                                                       | The sign-in code and invite emails                                    |
 | `src/messages`                                                     | Interface text in Lithuanian, English and Russian                     |

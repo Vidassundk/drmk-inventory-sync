@@ -16,6 +16,8 @@ type Stats = Omit<PageStats, "unknownStatus"> & {
   pages: number;
   seen: number;
   removed: number;
+  /** Full sync: how many parts RRR says it has, for the dashboard's progress bar. */
+  total?: number;
   /** Reservation list entries dropped because RRR no longer has their part reserved. */
   reservationsEnded?: number;
   [unknownCode: `status_${string}`]: number;
@@ -126,6 +128,9 @@ export function syncRrrFull(db: Db, rrr: RrrClient) {
         if (more) next = prefetchPage(rrr, page + 1, { id: "asc" });
         addStats(stats, await upsertRrrPage(db, runId, batch), batch.length);
         for (const p of batch) cursor = maxTs(cursor, externalUpdatedAt(p));
+        stats.total = total;
+        // Save progress every few pages (about every 15 seconds), so the dashboard's sync page can follow the run.
+        if (page % 5 === 0) await db.update(syncRuns).set({ stats }).where(eq(syncRuns.id, runId));
         if (page % 20 === 0) console.log(`  page ${page}: ${stats.seen}/${total}`);
         if (!more) break;
       }

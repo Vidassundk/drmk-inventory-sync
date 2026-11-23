@@ -42,7 +42,9 @@ The two rows that didn't match, and a few € figures, are most likely prices or
 - [ ] Copy car photos to R2: they still load from Ovoko's car image server, and only 331 of 819 cars have any
 - [ ] Car columns and filters RRR shows but the API doesn't provide: purchase date, dismantling date, status (also its filter), created by
 - [x] Sidebar navigation like RRR's
-- [ ] "Last synced" time, so people can see how fresh the data is
+- [x] Sync status page for admins: progress, job health and recent runs
+- [ ] Record photo and car job runs in `sync_runs` too, so the page can list them like the part syncs
+- [ ] "Last synced" time for guests, so they can see how fresh the data is
 - [ ] Check our totals per status against RRR's
 
 ## Sign-in and access

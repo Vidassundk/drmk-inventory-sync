@@ -147,6 +147,14 @@ All three are started by `apps/scheduler`. Times are UTC.
 
 Any of them can also be started by hand from the repo's Actions tab.
 
+Admins can follow them on the dashboard's **Sinchronizavimas** page, under Nustatymai. It shows:
+
+- **Progress bars:** our parts against RRR's own count, photos copied to R2 with an estimated finish date, cover photos of parts in stock, and cars.
+- **A marker per job:** green, amber when it's late, red when it failed. A full sync that saw 0 parts is red too, which is how a lost RRR login shows up.
+- **The last 20 runs,** with what each one changed, or its error.
+
+The page reads only our database, where the jobs record their runs. It refreshes itself every 10 seconds while a job runs and every minute otherwise, and a full sync saves its progress every few pages, so the page follows it as it goes.
+
 ## Secrets
 
 | Where                                 | What                                                                                                                                                                                 |

@@ -3,10 +3,14 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppLink } from "@/components/app-link";
-import { CarsIcon, PartsIcon, ReservationsIcon, UsersIcon } from "@/components/icons";
+import { CarsIcon, PartsIcon, ReservationsIcon, SyncIcon, UsersIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
 
-type NavLink = { href: string; label: "nav.parts" | "nav.cars" | "nav.reservations" | "nav.users"; icon: ReactNode };
+type NavLink = {
+  href: string;
+  label: "nav.parts" | "nav.cars" | "nav.reservations" | "nav.users" | "nav.sync";
+  icon: ReactNode;
+};
 type NavSection = { title: "nav.inventory" | "nav.settings"; links: NavLink[] };
 
 const INVENTORY: NavSection = {
@@ -20,7 +24,10 @@ const INVENTORY: NavSection = {
 };
 const SETTINGS: NavSection = {
   title: "nav.settings",
-  links: [{ href: "/users", label: "nav.users", icon: <UsersIcon /> }],
+  links: [
+    { href: "/users", label: "nav.users", icon: <UsersIcon /> },
+    { href: "/sync", label: "nav.sync", icon: <SyncIcon /> },
+  ],
 };
 
 /**
