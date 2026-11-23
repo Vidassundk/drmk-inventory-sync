@@ -23,6 +23,7 @@ Two calls change data on RRR, used by the dashboard's reservations:
 ```ts
 const part = await rrr.getPart(970); // one part as RRR has it right now, or null
 await rrr.changePartStatus(970, PART_STATUS.reserved); // and PART_STATUS.inStock to release it
+await rrr.setInternalNotes(970, "Rezervacija …"); // staff-only notes in RRR
 ```
 
 Failed requests throw `RrrApiError`, which carries the HTTP status and RRR's status code.
@@ -47,4 +48,6 @@ These were found by testing the live API, and some aren't in its docs.
 - `/crm/changePartStatus` needs CRM write access on the account. Tested on 2026-11-23: reserving and releasing one part worked.
 - A part reserved through the API has `reserved_user: "0"`. Staff reserving on RRR get their own user number.
 - `reserved_date` stays set after a part is released, so trust it only while the status is reserved.
+- `/crm/updatePart` changes only the fields sent: sending just `internal_notes` leaves the rest of the part as it was. An empty or blank value is ignored, so notes can be replaced but not cleared through the API. Tested on 2026-11-23.
+- Photo links name a random watermark corner (`/tl/`, `/br/` …) on every read, so compare photos without it.
 - An account that has lost API access still gets `R200` with no parts and a total of 0, not an error.

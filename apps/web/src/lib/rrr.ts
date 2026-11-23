@@ -23,3 +23,29 @@ const STATUSES: Record<string, PartStatus> = {
 };
 
 export const statusFromRrr = (code: string): PartStatus | null => STATUSES[code] ?? null;
+
+/** Marks the lines we write into a part's internal notes on RRR, so we can find and replace them later. */
+const OUR_LINE = /^Rezervacija .* iš vidinės platformos$/;
+
+/** Today in Vilnius, as RRR's staff read dates: 2026-11-23. */
+const today = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Vilnius" }).format(new Date());
+
+/**
+ * The line staff see in RRR's internal notes. It stays in Lithuanian whatever language the admin uses, since it's
+ * for the team in RRR. With no client (a reservation made straight on RRR), the line leaves the name out.
+ */
+export const reservationNote = (action: "sukurta" | "atšaukta", client: string | null) =>
+  `Rezervacija ${client ? `${client} ` : ""}${action} ${today()} iš vidinės platformos`;
+
+/**
+ * The notes with our line on top and the team's own text kept below it. Any line we wrote earlier is replaced, so
+ * notes never pile up. RRR can't empty a note, which is why releasing writes an "atšaukta" line instead of removing ours.
+ */
+export function withReservationNote(notes: string | null | undefined, line: string) {
+  const theirs = (notes ?? "")
+    .split("\n")
+    .filter((text) => !OUR_LINE.test(text.trim()))
+    .join("\n")
+    .trim();
+  return theirs ? `${line}\n${theirs}` : line;
+}

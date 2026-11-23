@@ -141,6 +141,15 @@ export class RrrClient {
     await this.post("crm/changePartStatus", new URLSearchParams(), { part_id: String(id), status });
   }
 
+  /**
+   * POST /crm/updatePart with only the internal notes, which staff see in RRR and the shop doesn't. Changes live data.
+   * Only the part id and the fields sent are updated (tested 2026-11-23). RRR ignores an empty or blank value, so this
+   * can replace notes but never clear them: only RRR's own admin can.
+   */
+  async setInternalNotes(id: string | number, notes: string) {
+    await this.post("crm/updatePart", new URLSearchParams(), { part_id: String(id), internal_notes: notes });
+  }
+
   /** A code table as code -> its names in each language. */
   async getLookup(name: RrrLookup) {
     const body = await this.post(`get/${name}`, new URLSearchParams());

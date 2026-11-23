@@ -102,7 +102,7 @@ These rules run on the server, in the data layer, so editing the address doesn't
 
 ## Reservations
 
-Admins set parts aside for guests, and RRR stays the record of whether a part is reserved. Our database only adds who it's for, because RRR's API has no field for that.
+Admins set parts aside for guests, and RRR stays the record of whether a part is reserved. RRR's API has no field for who it's for, so our database keeps that, and the name is also written into the part's internal notes on RRR, for staff working there.
 
 - **Reserving** happens on the part's page. The dashboard first asks RRR for the part's current status, then reserves it there, then records the guest here. If RRR says the part is already sold or reserved by someone else, nothing changes and the admin sees the real status.
 - **Releasing** puts the part back in stock on RRR and takes it off the list. Admins can also move a part to another guest.
@@ -110,6 +110,10 @@ Admins set parts aside for guests, and RRR stays the record of whether a part is
 - **Changes made on RRR come through too.** The sync runs every 15 minutes and drops a list entry once RRR no longer has its part reserved: sold, put back in stock or removed. A part reserved straight on RRR shows under "No client yet", where an admin can assign it or release it.
 - **Nothing gets lost halfway.** If RRR refuses or can't be reached, nothing is saved here. If saving here fails after RRR reserved the part, it shows under "No client yet".
 - **Removing a guest's account** moves their parts to "No client yet". They stay reserved on RRR until an admin releases them.
+- **The internal notes on RRR** get one line from us, on top of whatever the team wrote there:
+  - Reserving or reassigning writes `Rezervacija Jonas Jonaitis sukurta 2026-11-23 iš vidinės platformos`, replacing our earlier line.
+  - Releasing writes `Rezervacija Jonas Jonaitis atšaukta 2026-11-23 iš vidinės platformos`. RRR's API can't empty a note, so the line stays as a record.
+  - The team's own text is kept below our line. Changes made directly on RRR don't touch the notes: only actions in the dashboard write them.
 
 Reserving needs the RRR login as Worker secrets (see [Secrets](#secrets)), and RRR account access to its CRM write calls.
 
