@@ -34,8 +34,15 @@ const SETTINGS: NavSection = {
 /**
  * The sidebar: a column of titled sections on wide screens, a row under the header on phones.
  */
-export function MainNav({ isAdmin }: { isAdmin: boolean }) {
-  const { t } = useI18n();
+export function MainNav({
+  isAdmin,
+  badges = {},
+}: {
+  isAdmin: boolean;
+  /** A count beside a link, such as requests waiting for an admin. Zero shows nothing. */
+  badges?: Record<string, number>;
+}) {
+  const { t, intlLocale } = useI18n();
   const pathname = usePathname();
   // The clicked item lights up at once, and the content area shows that page's skeleton until it's ready.
   const { pendingHref, go } = useNavigation();
@@ -69,6 +76,11 @@ export function MainNav({ isAdmin }: { isAdmin: boolean }) {
             >
               {icon}
               {t(label)}
+              {(badges[href] ?? 0) > 0 && (
+                <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-xs leading-none font-medium text-white tabular-nums">
+                  {new Intl.NumberFormat(intlLocale).format(badges[href])}
+                </span>
+              )}
             </AppLink>
           ))}
         </div>

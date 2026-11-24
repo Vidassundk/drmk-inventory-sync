@@ -2,6 +2,7 @@ import {
   and,
   asc,
   authUsers,
+  count,
   desc,
   eq,
   images,
@@ -9,6 +10,7 @@ import {
   partImages,
   partListings,
   parts,
+  reservationRequests,
   reservations,
   rrrCarModels,
   rrrCars,
@@ -124,3 +126,83 @@ export async function listClients() {
 }
 
 export type Client = Awaited<ReturnType<typeof listClients>>[number];
+
+/** Open requests with their part, oldest first so nobody waits longest. Only for parts still in stock. */
+async function requestRows(where?: SQLWrapper) {
+  const db = await dataDb();
+  const { locale } = await getI18n();
+  const rows = await db
+    .select({
+      id: parts.id,
+      rrrId: partListings.externalId,
+      name: partName(locale),
+      price: parts.price,
+      currency: parts.currency,
+      rrrCarId: parts.rrrCarId,
+      carBrand: rrrCarModels.brand,
+      carModel: rrrCarModels.name,
+      carYearStart: rrrCarModels.yearStart,
+      carYearEnd: rrrCarModels.yearEnd,
+      clientId: reservationRequests.userId,
+      clientName: authUsers.name,
+      clientEmail: authUsers.email,
+      requestedAt: sql<string>`to_char(${reservationRequests.createdAt} at time zone 'Europe/Vilnius', 'YYYY-MM-DD HH24:MI')`,
+      storageKey: images.storageKey,
+      sourceUrl: images.sourceUrl,
+      photoCount: sql<number>`(select count(*)::int from ${partImages} where ${partImages.partId} = ${parts.id})`,
+    })
+    .from(reservationRequests)
+    .innerJoin(parts, eq(parts.id, reservationRequests.partId))
+    .innerJoin(authUsers, eq(authUsers.id, reservationRequests.userId))
+    .leftJoin(partListings, and(eq(partListings.partId, parts.id), eq(partListings.channelId, "rrr")))
+    .leftJoin(partImages, and(eq(partImages.partId, parts.id), eq(partImages.position, 0)))
+    .leftJoin(images, eq(images.id, partImages.imageId))
+    .leftJoin(rrrCars, eq(rrrCars.id, parts.rrrCarId))
+    .leftJoin(rrrCarModels, eq(rrrCarModels.id, rrrCars.modelId))
+    .leftJoin(rrrCategories, eq(rrrCategories.id, parts.rrrCategoryId))
+    .where(and(eq(parts.status, "in_stock"), isNull(parts.deletedAt), where))
+    .orderBy(asc(reservationRequests.createdAt), asc(parts.id));
+
+  return rows.map(({ storageKey, sourceUrl, ...part }) => ({ ...part, coverUrl: imageUrl({ storageKey, sourceUrl }) }));
+}
+
+export type RequestedPart = Awaited<ReturnType<typeof requestRows>>[number];
+
+/** For admins: every open request, from every guest. */
+export async function listRequests() {
+  await requireAdmin();
+  return requestRows();
+}
+
+/** For guests: their own open requests. */
+export async function listMyRequests() {
+  const session = await requireUser();
+  return requestRows(eq(reservationRequests.userId, session.user.id));
+}
+
+/** Who's asking for a part, for its page. Admins only. */
+export async function requestsFor(partId: string) {
+  await requireAdmin();
+  return requestRows(eq(reservationRequests.partId, partId));
+}
+
+/** When the signed-in guest asked for a part, or null if they haven't. */
+export async function myRequestFor(partId: string) {
+  const session = await requireUser();
+  const [row] = await requestRows(
+    and(eq(reservationRequests.partId, partId), eq(reservationRequests.userId, session.user.id)),
+  );
+  return row?.requestedAt ?? null;
+}
+
+/** How many requests wait for an admin, for the sidebar. */
+export async function openRequestCount() {
+  await requireAdmin();
+  const db = await dataDb();
+  const [row] = await db
+    .select({ open: count() })
+    .from(reservationRequests)
+    .innerJoin(parts, eq(parts.id, reservationRequests.partId))
+    .where(and(eq(parts.status, "in_stock"), isNull(parts.deletedAt)));
+  return row?.open ?? 0;
+}

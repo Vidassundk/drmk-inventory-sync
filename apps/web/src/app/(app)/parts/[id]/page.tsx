@@ -5,6 +5,7 @@ import { AppLink } from "@/components/app-link";
 import { BackToList } from "@/components/back-to-list";
 import { PartGallery } from "@/components/part-gallery";
 import { ReservationControl } from "@/components/reservation-control";
+import { RequestActions, RequestButton } from "@/components/reservation-requests";
 import { SimilarParts } from "@/components/similar-parts";
 import { getI18n } from "@/lib/i18n-server";
 import {
@@ -17,7 +18,7 @@ import {
   userName,
 } from "@/lib/part-format";
 import { getPart } from "@/lib/parts";
-import { listClients, reservationFor } from "@/lib/reservations";
+import { listClients, myRequestFor, requestsFor, reservationFor } from "@/lib/reservations";
 
 export async function generateMetadata({ params }: PageProps<"/parts/[id]">): Promise<Metadata> {
   const { t } = await getI18n();
@@ -42,7 +43,12 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
   if (!part) notFound();
   // Admins can reserve a part in stock, or reassign or release a reserved one.
   const reservable = part.admin && !part.deletedAt && (part.status === "in_stock" || part.status === "reserved");
-  const [clients, clientId] = reservable ? await Promise.all([listClients(), reservationFor(part.id)]) : [[], null];
+  const [clients, clientId, requests] = reservable
+    ? await Promise.all([listClients(), reservationFor(part.id), requestsFor(part.id)])
+    : [[], null, []];
+  // Guests can ask for a part in stock; an admin approves it.
+  const requestable = !part.admin && !part.deletedAt && part.status === "in_stock";
+  const requestedAt = requestable ? await myRequestFor(part.id) : null;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 md:p-6">
@@ -77,6 +83,30 @@ export default async function PartPage({ params }: PageProps<"/parts/[id]">) {
                 clientId={clientId}
                 clients={clients}
               />
+              {requests.length > 0 && (
+                <div className="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-900">
+                  <h3 className="mb-2 text-sm font-medium">{t("reservations.requests.forPart")}</h3>
+                  <ul className="flex flex-col gap-3">
+                    {requests.map((request) => (
+                      <li key={request.clientId} className="flex flex-col gap-1.5 text-sm">
+                        <span>
+                          <span className="font-medium">{request.clientName}</span>{" "}
+                          <span className="text-muted">
+                            {request.clientEmail} · {request.requestedAt}
+                          </span>
+                        </span>
+                        <RequestActions partId={part.id} userId={request.clientId} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+          {requestable && (
+            <section className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+              <h2 className="mb-1 font-semibold">{t("reservations.request.title")}</h2>
+              <RequestButton partId={part.id} requestedAt={requestedAt} />
             </section>
           )}
           <dl className="divide-y divide-zinc-100 dark:divide-zinc-900">

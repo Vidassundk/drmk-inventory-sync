@@ -1,5 +1,5 @@
 import { and, count, desc, eq, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
-import { partListings, parts, reservations, syncRuns, type Db } from "@drmk/db";
+import { partListings, parts, reservationRequests, reservations, syncRuns, type Db } from "@drmk/db";
 import type { GetPartsParams, RrrClient, RrrPart } from "@drmk/rrr-client";
 import { exclusive } from "../lock.ts";
 import { externalUpdatedAt } from "./map.ts";
@@ -20,6 +20,8 @@ type Stats = Omit<PageStats, "unknownStatus"> & {
   total?: number;
   /** Reservation list entries dropped because RRR no longer has their part reserved. */
   reservationsEnded?: number;
+  /** Guests' requests dropped because their part is no longer in stock. */
+  requestsEnded?: number;
   [unknownCode: `status_${string}`]: number;
 };
 
@@ -59,6 +61,19 @@ async function endReservations(db: Db) {
   return ended.length;
 }
 
+/** A guest's request waits only while the part is in stock. Sold, removed or reserved for anyone, it goes. */
+async function endRequests(db: Db) {
+  const ended = await db
+    .delete(reservationRequests)
+    .where(
+      sql`${reservationRequests.partId} in (
+        select ${parts.id} from ${parts} where ${parts.status} <> 'in_stock' or ${parts.deletedAt} is not null
+      )`,
+    )
+    .returning({ partId: reservationRequests.partId });
+  return ended.length;
+}
+
 async function tracked(
   db: Db,
   kind: "full" | "incremental",
@@ -70,6 +85,7 @@ async function tracked(
   try {
     const cursor = await fn(run.id, stats);
     stats.reservationsEnded = await endReservations(db);
+    stats.requestsEnded = await endRequests(db);
     await db
       .update(syncRuns)
       .set({ status: "succeeded", cursor, stats, finishedAt: new Date() })

@@ -69,6 +69,9 @@ Invite-only sign-in with emailed codes, built to replace Cloudflare Access.
 - [ ] Show the client's name in the parts table's "Rezervavo" column instead of the RRR user
 - [ ] History of past reservations, if the team wants it
 - [x] Write the client's name to RRR's internal notes, keeping the team's own text
+- [x] Guests ask for a part; an admin approves (reserves on RRR) or declines
+- [ ] Let admins know about new requests by email, not only by the count in the sidebar
+- [x] Approve a request on RRR once, from the dashboard, to confirm it end to end (#970, 2026-11-24)
 
 ## Security
 

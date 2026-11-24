@@ -6,19 +6,19 @@ Its name, logo, domains and email sender are in `brand/brand.json`, read at buil
 
 ## Layout
 
-| Path                                                               | What it is                                                            |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `src/app/(app)`                                                    | The signed-in pages: parts, cars, reservations and, for admins, users |
-| `src/app/login`                                                    | The sign-in page                                                      |
-| `src/app/api/auth`                                                 | Better Auth's endpoints: send a code, sign in, sign out               |
-| `src/app/api/cars`, `api/car-models`                               | Options for the car and model filters, loaded as they scroll          |
-| `src/lib/parts.ts`, `src/lib/cars.ts`                              | Every inventory query                                                 |
-| `src/lib/reservations.ts`, `src/app/(app)/reservations/actions.ts` | Reservation lists, and reserving and releasing parts on RRR           |
-| `src/lib/rrr.ts`                                                   | The RRR API client, used only for reservations                        |
-| `src/lib/sync-status.ts`                                           | The admin Sinchronizavimas page's numbers, from our database only     |
-| `src/lib/auth.tsx`, `src/lib/session.ts`                           | Sign-in setup, and the checks pages and queries use                   |
-| `src/emails`                                                       | The sign-in code and invite emails                                    |
-| `src/messages`                                                     | Interface text in Lithuanian, English and Russian                     |
+| Path                                                               | What it is                                                                        |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `src/app/(app)`                                                    | The signed-in pages: parts, cars, reservations and, for admins, users             |
+| `src/app/login`                                                    | The sign-in page                                                                  |
+| `src/app/api/auth`                                                 | Better Auth's endpoints: send a code, sign in, sign out                           |
+| `src/app/api/cars`, `api/car-models`                               | Options for the car and model filters, loaded as they scroll                      |
+| `src/lib/parts.ts`, `src/lib/cars.ts`                              | Every inventory query                                                             |
+| `src/lib/reservations.ts`, `src/app/(app)/reservations/actions.ts` | Reservation lists and guests' requests; reserving, releasing and approving on RRR |
+| `src/lib/rrr.ts`                                                   | The RRR API client, used only for reservations                                    |
+| `src/lib/sync-status.ts`                                           | The admin Sinchronizavimas page's numbers, from our database only                 |
+| `src/lib/auth.tsx`, `src/lib/session.ts`                           | Sign-in setup, and the checks pages and queries use                               |
+| `src/emails`                                                       | The sign-in code and invite emails                                                |
+| `src/messages`                                                     | Interface text in Lithuanian, English and Russian                                 |
 
 ## Running it locally
 

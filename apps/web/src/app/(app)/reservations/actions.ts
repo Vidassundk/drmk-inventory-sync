@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, authUsers, eq, isNull, partListings, parts, reservations } from "@drmk/db";
+import { and, authUsers, count, eq, isNull, partListings, parts, reservationRequests, reservations } from "@drmk/db";
 import { getDb } from "@/lib/db";
 import type { MessageKey } from "@/lib/i18n";
 import type { PartStatus } from "@/lib/parts-query";
 import { reservationNote, rrrClient, statusFromRrr, withReservationNote } from "@/lib/rrr";
-import { requireAdmin } from "@/lib/session";
+import { isAdmin, requireAdmin, requireUser } from "@/lib/session";
 
 export type ReservationResult = { ok?: MessageKey; error?: MessageKey; status?: PartStatus };
 
@@ -51,17 +51,31 @@ async function clientName(userId: string | null | undefined) {
   return user?.name ?? null;
 }
 
-function refresh(partId: string) {
-  revalidatePath("/reservations");
-  revalidatePath("/parts");
-  revalidatePath(`/parts/${partId}`);
+// The whole app, not just the pages: the sidebar's request count lives in the layout.
+function refresh() {
+  revalidatePath("/", "layout");
 }
+
+/** At most this many open requests per guest, so a slip of the mouse can't flood the admins' list. */
+const MAX_OPEN_REQUESTS = 30;
 
 /**
  * Sets a part aside for a guest. If it's in stock, reserves it on RRR first; if RRR already has it reserved (say,
  * reserved there by staff), just records who it's for. Anything else, such as sold, is refused.
  */
 export async function reservePart(partId: string, clientId: string): Promise<ReservationResult> {
+  return reserve(partId, clientId, { inStockOnly: false });
+}
+
+/**
+ * `inStockOnly` is for approving a guest's request: then a part RRR already has reserved is refused, as staff may
+ * have set it aside for someone else, instead of being claimed for the guest.
+ */
+async function reserve(
+  partId: string,
+  clientId: string,
+  { inStockOnly }: { inStockOnly: boolean },
+): Promise<ReservationResult> {
   const session = await requireAdmin();
   const db = getDb();
   const part = await findPart(partId);
@@ -79,8 +93,10 @@ export async function reservePart(partId: string, clientId: string): Promise<Res
     notes = fresh.notes;
     if (status === "in_stock") {
       await rrrClient().changePartStatus(part.rrrId, "1");
-    } else if (status !== "reserved") {
-      refresh(partId);
+    } else if (status !== "reserved" || inStockOnly) {
+      // Nobody can have it now, so requests for it have nothing left to wait for.
+      await db.delete(reservationRequests).where(eq(reservationRequests.partId, partId));
+      refresh();
       return { error: "reservations.notAvailable", status: status ?? undefined };
     }
   } catch (error) {
@@ -95,9 +111,11 @@ export async function reservePart(partId: string, clientId: string): Promise<Res
       .insert(reservations)
       .values({ partId, userId: clientId, reservedBy: session.user.id })
       .onConflictDoUpdate({ target: reservations.partId, set: { userId: clientId, reservedBy: session.user.id } });
+    // A reserved part is no longer up for requests, whoever it went to.
+    await tx.delete(reservationRequests).where(eq(reservationRequests.partId, partId));
   });
   await writeNote(part, notes, reservationNote("sukurta", client.name));
-  refresh(partId);
+  refresh();
   return { ok: "reservations.reserved" };
 }
 
@@ -128,8 +146,71 @@ export async function releasePart(partId: string): Promise<ReservationResult> {
   }
 
   await db.delete(reservations).where(eq(reservations.partId, partId));
-  refresh(partId);
+  refresh();
   return status === "in_stock"
     ? { ok: "reservations.released" }
     : { ok: "reservations.alreadyEnded", status: status ?? undefined };
+}
+
+/**
+ * A guest asks for a part in stock to be set aside for them. Changes nothing on RRR: that waits for an admin's
+ * approval. Checks our copy of the status only; approving checks RRR.
+ */
+export async function requestPart(partId: string): Promise<ReservationResult> {
+  const session = await requireUser();
+  // Admins reserve straight away instead.
+  if (isAdmin(session)) return { error: "reservations.notFound" };
+  const db = getDb();
+  const [part] = await db
+    .select({ status: parts.status })
+    .from(parts)
+    .where(and(eq(parts.id, partId), isNull(parts.deletedAt)));
+  if (!part) return { error: "reservations.notFound" };
+  if (part.status !== "in_stock") return { error: "reservations.request.notAvailable" };
+
+  const [{ open }] = await db
+    .select({ open: count() })
+    .from(reservationRequests)
+    .where(eq(reservationRequests.userId, session.user.id));
+  if (open >= MAX_OPEN_REQUESTS) return { error: "reservations.request.tooMany" };
+
+  await db.insert(reservationRequests).values({ partId, userId: session.user.id }).onConflictDoNothing();
+  refresh();
+  return { ok: "reservations.request.sentNow" };
+}
+
+/** A guest takes back their own request. */
+export async function cancelRequest(partId: string): Promise<ReservationResult> {
+  const session = await requireUser();
+  await getDb()
+    .delete(reservationRequests)
+    .where(and(eq(reservationRequests.partId, partId), eq(reservationRequests.userId, session.user.id)));
+  refresh();
+  return { ok: "reservations.request.cancelled" };
+}
+
+/** Approves a guest's request: reserves the part for them on RRR, exactly as reserving it by hand would. */
+export async function approveRequest(partId: string, userId: string): Promise<ReservationResult> {
+  await requireAdmin();
+  const db = getDb();
+  const [request] = await db
+    .select({ partId: reservationRequests.partId })
+    .from(reservationRequests)
+    .where(and(eq(reservationRequests.partId, partId), eq(reservationRequests.userId, userId)));
+  if (!request) {
+    refresh();
+    return { error: "reservations.requests.gone" };
+  }
+  const result = await reserve(partId, userId, { inStockOnly: true });
+  return result.ok ? { ok: "reservations.requests.approved" } : result;
+}
+
+/** Turns a request down. Nothing changes on RRR. */
+export async function declineRequest(partId: string, userId: string): Promise<ReservationResult> {
+  await requireAdmin();
+  await getDb()
+    .delete(reservationRequests)
+    .where(and(eq(reservationRequests.partId, partId), eq(reservationRequests.userId, userId)));
+  refresh();
+  return { ok: "reservations.requests.declined" };
 }

@@ -7,11 +7,15 @@ import { NavigationProvider, PageContent } from "@/components/navigation";
 import { PartsSearch } from "@/components/parts-search";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
+import { openRequestCount } from "@/lib/reservations";
 import { isAdmin, requireUser } from "@/lib/session";
 
 /** The dashboard: header, sidebar and pages, for signed-in people only. */
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireUser();
+  const admin = isAdmin(session);
+  // Requests waiting for an admin show as a count beside Rezervacijos.
+  const openRequests = admin ? await openRequestCount() : 0;
 
   return (
     <NavigationProvider>
@@ -38,7 +42,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <aside className="shrink-0 border-b border-zinc-200 px-4 py-2 md:w-60 md:border-r md:border-b-0 md:px-3 md:py-4 dark:border-zinc-800">
           {/* Stays in view below the sticky header (4rem tall on wide screens) while long lists scroll. */}
           <div className="md:sticky md:top-20">
-            <MainNav isAdmin={isAdmin(session)} />
+            <MainNav isAdmin={admin} badges={{ "/reservations": openRequests }} />
           </div>
         </aside>
         {/* min-w-0 lets wide tables scroll inside the page instead of pushing the sidebar off-screen. */}

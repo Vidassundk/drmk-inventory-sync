@@ -336,3 +336,23 @@ export const reservations = pgTable(
   },
   (t) => [index("reservations_user_idx").on(t.userId)],
 ).enableRLS();
+
+/**
+ * A guest asking for a part in stock to be set aside for them. Only a request: nothing changes on RRR until an admin
+ * approves it, which reserves the part like any other reservation and drops every request for that part. Declining or
+ * the guest cancelling deletes the row. The sync drops requests once the part is no longer free: sold, removed, or
+ * reserved for someone.
+ */
+export const reservationRequests = pgTable(
+  "reservation_requests",
+  {
+    partId: uuid("part_id")
+      .notNull()
+      .references(() => parts.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.partId, t.userId] }), index("reservation_requests_user_idx").on(t.userId)],
+).enableRLS();

@@ -10,7 +10,7 @@ An ever-updating backup of a used auto-parts inventory on RRR (rrr.lt / Ovoko), 
 - **Lets people browse it.** A fast dashboard for parts and cars, with search, filters, column settings, photo galleries and RRR's "Sandėlyje" stock figures. Lithuanian, English and Russian, in light and dark.
 - **Invites guests.** There are no passwords and no public sign-up. Someone gets in only when an admin invites their email. They sign in with a one-time code from an email in our own design.
 - **Gives admins control.** Admins invite people, choose their role and remove access. Admins also see what others don't: sold parts, reservations, parts without a price and the workshop's own details.
-- **Keeps reservation lists.** Admins set parts aside for a guest, and the part is reserved on RRR at the same time. Each guest sees their own list, and nobody else sees those parts. See [Reservations](#reservations).
+- **Keeps reservation lists.** Admins set parts aside for a guest, and the part is reserved on RRR at the same time. Guests can ask for a part, and an admin approves or declines. Each guest sees their own list, and nobody else sees those parts. See [Reservations](#reservations).
 
 | Part                                         | Car                                            |
 | -------------------------------------------- | ---------------------------------------------- |
@@ -106,6 +106,11 @@ Admins set parts aside for guests, and RRR stays the record of whether a part is
 
 - **Reserving** happens on the part's page. The dashboard first asks RRR for the part's current status, then reserves it there, then records the guest here. If RRR says the part is already sold or reserved by someone else, nothing changes and the admin sees the real status.
 - **Releasing** puts the part back in stock on RRR and takes it off the list. Admins can also move a part to another guest.
+- **Guests can ask for a part.** On a part in stock, a guest presses "Prašyti rezervuoti". That's only a request: nothing changes on RRR. Admins see open requests at the top of the Rezervacijos page, on the part's page, and as a count beside Rezervacijos in the sidebar.
+  - **Approving** reserves the part for that guest exactly as reserving by hand does: a fresh check on RRR, then the reservation there, then the notes line. If RRR no longer has the part in stock, even if staff reserved it there, the approval is refused rather than taking it from someone else.
+  - **Declining**, or the guest cancelling, just deletes the request.
+  - Once a part is reserved for anyone, every request for it goes. The sync also drops requests once a part is no longer in stock: sold, removed, or reserved on RRR.
+  - A guest sees their open requests under "Laukia patvirtinimo" on their Rezervacijos page, and can have up to 30 open at once.
 - **The Rezervacijos page** shows admins every list, with how many parts each has and their value. Guests see only their own list there.
 - **Changes made on RRR come through too.** The sync runs every 15 minutes and drops a list entry once RRR no longer has its part reserved: sold, put back in stock or removed. A part reserved straight on RRR shows under "No client yet", where an admin can assign it or release it.
 - **Nothing gets lost halfway.** If RRR refuses or can't be reached, nothing is saved here. If saving here fails after RRR reserved the part, it shows under "No client yet".
